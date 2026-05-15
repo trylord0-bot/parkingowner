@@ -104,6 +104,16 @@ class AuthService {
     _decode(resp);
   }
 
+  Future<void> verifyEmail(String email, String code) async {
+    final resp = await _post('/auth/verify-email', {'email': email, 'code': code});
+    _decode(resp);
+  }
+
+  Future<void> resendVerificationEmail(String email) async {
+    final resp = await _post('/auth/resend-verification', {'email': email});
+    _decode(resp);
+  }
+
   Future<UserInfo> me(String accessToken) async {
     final resp = await _get('/auth/me', token: accessToken);
     return _parseUserInfo(_decode(resp));

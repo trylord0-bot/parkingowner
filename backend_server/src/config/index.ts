@@ -21,7 +21,9 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
-  SMTP_FROM: z.string().default("ParkingOwner <noreply@parkingowner.com>"),
+  SMTP_FROM: z.string().default("ParkingOwner <noreply@lunlu.co.kr>"),
+
+  APP_URL: z.string().default("http://localhost:3000"),
 
   FIREBASE_SERVICE_ACCOUNT_PATH: z.string().default("./firebase-service-account.json"),
 

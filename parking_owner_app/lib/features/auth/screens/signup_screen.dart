@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -16,19 +18,51 @@ class SignupScreen extends ConsumerStatefulWidget {
 class _SignupScreenState extends ConsumerState<SignupScreen> {
   int _step = 0;
   bool _loading = false;
+  int _resendSeconds = 0;
+  Timer? _resendTimer;
 
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _pwCtrl = TextEditingController();
   final _pwConfirmCtrl = TextEditingController();
+  final _codeCtrl = TextEditingController();
 
   @override
   void dispose() {
+    _resendTimer?.cancel();
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _pwCtrl.dispose();
     _pwConfirmCtrl.dispose();
+    _codeCtrl.dispose();
     super.dispose();
+  }
+
+  void _startResendTimer() {
+    _resendTimer?.cancel();
+    setState(() => _resendSeconds = 60);
+    _resendTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) { t.cancel(); return; }
+      setState(() {
+        if (_resendSeconds > 0) {
+          _resendSeconds--;
+        } else {
+          t.cancel();
+        }
+      });
+    });
+  }
+
+  Future<void> _onResend() async {
+    setState(() => _loading = true);
+    try {
+      await ref.read(authServiceProvider).resendVerificationEmail(_emailCtrl.text.trim());
+      if (mounted) { setState(() => _loading = false); _startResendTimer(); }
+    } on ApiException catch (e) {
+      if (mounted) { _showError(e.message); setState(() => _loading = false); }
+    } catch (_) {
+      if (mounted) { _showError('재전송에 실패했습니다. 다시 시도해주세요.'); setState(() => _loading = false); }
+    }
   }
 
   void _showError(String message) {
@@ -45,7 +79,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     if (_step == 0) {
       await _doRegister();
     } else if (_step == 1) {
-      setState(() => _step = 2);
+      await _doVerifyEmail();
     } else {
       context.go('/login');
     }
@@ -73,11 +107,31 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     setState(() => _loading = true);
     try {
       await ref.read(authNotifierProvider.notifier).register(name, email, password);
-      if (mounted) setState(() { _step = 1; _loading = false; });
+      if (mounted) {
+        setState(() { _step = 1; _loading = false; });
+        _startResendTimer();
+      }
     } on ApiException catch (e) {
       if (mounted) { _showError(e.message); setState(() => _loading = false); }
     } catch (_) {
       if (mounted) { _showError('회원가입에 실패했습니다. 다시 시도해주세요.'); setState(() => _loading = false); }
+    }
+  }
+
+  Future<void> _doVerifyEmail() async {
+    final code = _codeCtrl.text.trim();
+    if (code.length != 6) {
+      _showError('6자리 인증 코드를 입력해주세요.');
+      return;
+    }
+    setState(() => _loading = true);
+    try {
+      await ref.read(authServiceProvider).verifyEmail(_emailCtrl.text.trim(), code);
+      if (mounted) setState(() { _step = 2; _loading = false; });
+    } on ApiException catch (e) {
+      if (mounted) { _showError(e.message); setState(() => _loading = false); }
+    } catch (_) {
+      if (mounted) { _showError('인증에 실패했습니다. 다시 시도해주세요.'); setState(() => _loading = false); }
     }
   }
 
@@ -115,7 +169,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   pwConfirmCtrl: _pwConfirmCtrl,
                   isDark: isDark,
                 ),
-                _Step2(email: _emailCtrl.text, isDark: isDark),
+                _Step2(
+                  email: _emailCtrl.text,
+                  isDark: isDark,
+                  codeCtrl: _codeCtrl,
+                  resendSeconds: _resendSeconds,
+                  onResend: _loading ? null : _onResend,
+                ),
                 _Step3Complete(isDark: isDark),
               ][_step],
             ),
@@ -246,8 +306,17 @@ class _Step1 extends StatelessWidget {
 class _Step2 extends StatelessWidget {
   final String email;
   final bool isDark;
+  final TextEditingController codeCtrl;
+  final int resendSeconds;
+  final VoidCallback? onResend;
 
-  const _Step2({required this.email, required this.isDark});
+  const _Step2({
+    required this.email,
+    required this.isDark,
+    required this.codeCtrl,
+    required this.resendSeconds,
+    required this.onResend,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -264,7 +333,7 @@ class _Step2 extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Text(
-          '아래 이메일로 인증 링크를 발송했습니다.',
+          '아래 이메일로 인증 코드를 발송했습니다.',
           style: TextStyle(fontSize: 13, color: subColor),
         ),
         const SizedBox(height: 4),
@@ -276,23 +345,58 @@ class _Step2 extends StatelessWidget {
               color: AppColors.accentLight),
         ),
         const SizedBox(height: 28),
+        _FieldLabel('인증 코드', isDark: isDark),
+        TextField(
+          controller: codeCtrl,
+          keyboardType: TextInputType.number,
+          maxLength: 6,
+          style: TextStyle(
+              fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: 8, color: textColor),
+          textAlign: TextAlign.center,
+          decoration: const InputDecoration(
+            hintText: '000000',
+            counterText: '',
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('코드를 받지 못하셨나요?',
+                style: TextStyle(fontSize: 13, color: subColor)),
+            const SizedBox(width: 6),
+            TextButton(
+              onPressed: resendSeconds > 0 ? null : onResend,
+              style: TextButton.styleFrom(
+                minimumSize: Size.zero,
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                resendSeconds > 0 ? '재전송 (${resendSeconds}s)' : '재전송',
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
         Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: AppColors.accentLight.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-                color: AppColors.accentLight.withValues(alpha: 0.2)),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: AppColors.accentLight.withValues(alpha: 0.2)),
           ),
           child: Row(
             children: [
-              const Icon(Icons.mail_outline_rounded,
-                  color: AppColors.accentLight, size: 20),
-              const SizedBox(width: 12),
+              const Icon(Icons.info_outline_rounded,
+                  color: AppColors.accentLight, size: 16),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  '이메일의 인증 링크를 클릭하여 인증을 완료해 주세요.\n인증 후 관리자 승인을 거쳐 서비스를 이용할 수 있습니다.',
-                  style: TextStyle(fontSize: 13, color: subColor, height: 1.5),
+                  '코드는 10분 후 만료됩니다.',
+                  style: TextStyle(fontSize: 12, color: subColor),
                 ),
               ),
             ],

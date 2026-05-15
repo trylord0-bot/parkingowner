@@ -14,8 +14,8 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  final _emailCtrl = TextEditingController();
-  final _pwCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController(text: 'admin@parkingowner.com');
+  final _pwCtrl = TextEditingController(text: 'Admin1234!');
   bool _obscure = true;
   bool _loading = false;
 

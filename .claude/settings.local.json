@@ -16,7 +16,11 @@
       "Bash(mkdir -p \"C:\\\\Users\\\\INTERACT\\\\.claude\\\\projects\\\\c--WORK-etc-parking-owner\\\\memory\")",
       "Bash(Get-ChildItem -Path \"c:\\\\WORK\\\\etc\\\\parking_owner\" -Depth 1 -Force)",
       "Bash(Select-Object Name, PSIsContainer)",
-      "Bash(Format-Table)"
+      "Bash(Format-Table)",
+      "Bash(node -e \"require\\('nodemailer'\\); console.log\\('ok'\\)\")",
+      "Bash(npx tsc *)",
+      "Bash(npx prisma *)",
+      "Bash(findstr /i \"start\\\\|dev\\\\|build\\\\|tsx\\\\|ts-node\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\INTERACT\\.claude\\projects\\c--WORK-etc-parking-owner\\memory"

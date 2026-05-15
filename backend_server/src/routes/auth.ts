@@ -5,6 +5,7 @@ import { authenticate } from "../middleware/authenticate.js";
 import { config } from "../config/index.js";
 import { nanoid } from "nanoid";
 import { addDays, addMinutes } from "../utils/date.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "../services/email.js";
 
 const registerSchema = z.object({
   name: z.string().min(1).max(50),
@@ -22,7 +23,12 @@ const refreshSchema = z.object({
 });
 
 const verifyEmailSchema = z.object({
-  token: z.string(),
+  email: z.string().email(),
+  code: z.string().length(6),
+});
+
+const resendVerificationSchema = z.object({
+  email: z.string().email(),
 });
 
 const forgotPasswordSchema = z.object({
@@ -49,19 +55,22 @@ const authRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const hashed = await bcrypt.hash(body.password, 12);
-    const emailVerifyToken = nanoid(32);
+    const emailVerifyCode = String(Math.floor(100000 + Math.random() * 900000));
+    const emailVerifyExpiresAt = addMinutes(new Date(), 10);
 
     const user = await app.prisma.user.create({
       data: {
         name: body.name,
         email: body.email,
         password: hashed,
-        emailVerifyToken,
-      },
+        emailVerifyToken: emailVerifyCode,
+        emailVerifyExpiresAt,
+      } as any,
     });
 
-    // TODO: send verification email via nodemailer
-    // await sendVerificationEmail(user.email, emailVerifyToken);
+    await sendVerificationEmail(user.email, emailVerifyCode).catch((err) =>
+      app.log.error({ err }, "Failed to send verification email")
+    );
 
     return reply.code(201).send({
       message: "회원가입이 완료되었습니다. 이메일을 확인해 주세요.",
@@ -71,19 +80,48 @@ const authRoutes: FastifyPluginAsync = async (app) => {
 
   // ── POST /auth/verify-email ──────────────────────────────────────────────
   app.post("/verify-email", async (req, reply) => {
-    const { token } = verifyEmailSchema.parse(req.body);
+    const { email, code } = verifyEmailSchema.parse(req.body);
 
-    const user = await app.prisma.user.findFirst({ where: { emailVerifyToken: token } });
-    if (!user) {
-      return reply.code(400).send({ error: "유효하지 않은 인증 토큰입니다." });
+    const user = await app.prisma.user.findUnique({ where: { email } });
+    if (
+      !user ||
+      user.emailVerifyToken !== code ||
+      !(user as any).emailVerifyExpiresAt ||
+      (user as any).emailVerifyExpiresAt < new Date()
+    ) {
+      return reply.code(400).send({ error: "인증 코드가 유효하지 않거나 만료되었습니다." });
     }
 
     await app.prisma.user.update({
       where: { id: user.id },
-      data: { emailVerified: true, emailVerifyToken: null },
+      data: { emailVerified: true, emailVerifyToken: null, emailVerifyExpiresAt: null } as any,
     });
 
     return { message: "이메일 인증이 완료되었습니다." };
+  });
+
+  // ── POST /auth/resend-verification ──────────────────────────────────────
+  app.post("/resend-verification", async (req, reply) => {
+    const { email } = resendVerificationSchema.parse(req.body);
+
+    const user = await app.prisma.user.findUnique({ where: { email } });
+    if (!user || user.emailVerified) {
+      return { message: "인증 코드를 발송했습니다." };
+    }
+
+    const emailVerifyCode = String(Math.floor(100000 + Math.random() * 900000));
+    const emailVerifyExpiresAt = addMinutes(new Date(), 10);
+
+    await app.prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerifyToken: emailVerifyCode, emailVerifyExpiresAt } as any,
+    });
+
+    await sendVerificationEmail(email, emailVerifyCode).catch((err) =>
+      app.log.error({ err }, "Failed to resend verification email")
+    );
+
+    return { message: "인증 코드를 발송했습니다." };
   });
 
   // ── POST /auth/login ─────────────────────────────────────────────────────
@@ -201,8 +239,9 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       data: { passwordResetToken: token, passwordResetAt: addMinutes(new Date(), 30) },
     });
 
-    // TODO: send reset email
-    // await sendPasswordResetEmail(email, token);
+    await sendPasswordResetEmail(email, token).catch((err) =>
+      app.log.error({ err }, "Failed to send password reset email")
+    );
 
     return { message: "비밀번호 재설정 이메일을 발송했습니다." };
   });

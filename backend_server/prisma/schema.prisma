@@ -74,7 +74,8 @@ model User {
   phone              String?
   fcmToken           String?  // FCM device token for push notifications
   emailVerified      Boolean  @default(false)
-  emailVerifyToken   String?
+  emailVerifyToken      String?
+  emailVerifyExpiresAt  DateTime?
   passwordResetToken String?
   passwordResetAt    DateTime?
   isActive           Boolean  @default(true)
