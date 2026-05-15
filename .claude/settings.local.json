@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"c:\\\\WORK\\\\etc\\\\parking_owner\\\\app\" -Recurse -Force | Sort-Object FullName | Format-Table FullName, @{Name=\"Type\";Expression={if\\($_.PSIsContainer\\){\"DIR\"} else {[System.IO.Path]::GetExtension\\($_\\)}}} -AutoSize)",
+      "Bash(dir \"c:\\\\WORK\\\\etc\\\\parking_owner\\\\app\")",
+      "Bash(flutter --version)",
+      "Read(//c/WORK/etc/parking_owner/**)",
+      "Bash(flutter create *)",
+      "Bash(flutter pub *)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter build *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\WORK\\\\etc\\\\parking_owner\\\\parking_owner_app\" -Recurse -Force)",
+      "Bash(Select-Object -Property FullName, PSIsContainer)",
+      "Bash(Sort-Object FullName)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\INTERACT\\\\.claude\\\\projects\\\\c--WORK-etc-parking-owner\\\\memory\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\WORK\\\\etc\\\\parking_owner\" -Depth 1 -Force)",
+      "Bash(Select-Object Name, PSIsContainer)",
+      "Bash(Format-Table)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\INTERACT\\.claude\\projects\\c--WORK-etc-parking-owner\\memory"
+    ]
+  }
+}

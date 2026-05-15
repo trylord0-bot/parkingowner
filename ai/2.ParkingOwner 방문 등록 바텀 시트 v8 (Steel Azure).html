@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>방문 등록 v7</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans','Noto Sans KR',sans-serif;background:#0a0f18;
+  display:flex;flex-direction:column;align-items:center;padding:32px 20px 80px;gap:12px;}
+h2{color:#D8E8F5;font-size:15px;font-weight:700;text-align:center;margin-top:36px;}
+.note{color:#7890A8;font-size:11px;text-align:center;line-height:1.8;}
+.phones-row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start;}
+.pw{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.plabel{color:#9CA3AF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;}
+
+.phone{width:320px;height:680px;border-radius:48px;padding:12px;position:relative;flex-shrink:0;}
+.phone.dark-phone{background:#080808;
+  box-shadow:0 0 0 1px #1e1e1e,0 0 0 3px #080808,0 28px 70px rgba(0,0,0,.85),
+  inset 0 1px 0 rgba(255,255,255,.06);}
+.phone.light-phone{background:#e8e8e8;
+  box-shadow:0 0 0 1px #d0d0d0,0 0 0 3px #e8e8e8,0 28px 70px rgba(0,0,0,.35),
+  inset 0 1px 0 rgba(255,255,255,.9);}
+.phone::before{content:'';position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  width:98px;height:28px;border-radius:16px;z-index:10;}
+.dark-phone::before{background:#000;}
+.light-phone::before{background:#d0d0d0;}
+
+/* ── Dark Mode 변수 ── */
+.ps {
+  --color-primary:   #4A90C8;
+  --color-secondary: #2D6098;
+  --color-accent:    #78B8E8;
+  --color-bg:        #0C1520;
+  --color-surface:   #142030;
+  --color-text:      #D8E8F5;
+  --color-subtext:   #7890A8;
+  --border-color:    rgba(74,144,200,.2);
+  --border-light:    rgba(74,144,200,.08);
+  --input-bg:        #0C1520;
+  --dd-bg:           #1a2d40;
+  --handle:          rgba(255,255,255,.15);
+  --chip-on-bg:      rgba(74,144,200,.18);
+  --chip-on-border:  #4A90C8;
+  --chip-on-text:    #D8E8F5;
+  --btn-ghost-bg:    rgba(74,144,200,.1);
+  --placeholder:     #3A5068;
+  --dt-scheme:       dark;
+  --cam-bg:          #1a1a24;
+
+  width:100%;height:100%;border-radius:38px;overflow:hidden;
+  display:flex;flex-direction:column;position:relative;
+  background:var(--color-bg);
+}
+
+/* ── Light Mode 변수 (Steel Azure 기획서 기준) ── */
+.ps.light {
+  --color-primary:   #1B3D6F;
+  --color-secondary: #2D6098;
+  --color-accent:    #4A90C8;
+  --color-bg:        #F0F4F9;
+  --color-surface:   #FFFFFF;
+  --color-text:      #162035;
+  --color-subtext:   #607080;
+  --border-color:    #C8D6E5;
+  --border-light:    #E0EAF4;
+  --input-bg:        #FFFFFF;
+  --dd-bg:           #FFFFFF;
+  --handle:          #C8D6E5;
+  --chip-on-bg:      #EBF3FB;
+  --chip-on-border:  #1B3D6F;
+  --chip-on-text:    #1B3D6F;
+  --btn-ghost-bg:    #EBF3FB;
+  --placeholder:     #9EB3C8;
+  --dt-scheme:       light;
+  --cam-bg:          #1a1a24;
+}
+
+/* ── Semantic Colors (고정) ── */
+:root {
+  --sem-green:  #2ECC71;
+  --sem-yellow: #F1C40F;
+  --sem-red:    #E74C3C;
+  --call-green: #22C55E;
+  --call-green-bg: rgba(34,197,94,0.15);
+  --call-green-border: rgba(34,197,94,0.3);
+}
+
+.sbar{height:44px;flex-shrink:0;display:flex;align-items:flex-end;
+  justify-content:space-between;padding:0 18px 6px;font-size:10px;font-weight:700;
+  color:var(--color-text);}
+.sbar-r{display:flex;gap:4px;align-items:center;}
+
+.hdr{flex-shrink:0;padding:8px 16px 12px;display:flex;align-items:center;
+  justify-content:space-between;background:var(--color-surface);
+  border-bottom:1px solid var(--border-light);}
+.hdr-title{color:var(--color-text);font-size:16px;font-weight:700;}
+.hamburger-btn{width:36px;height:36px;border-radius:10px;border:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:var(--btn-ghost-bg);flex-shrink:0;padding:0;}
+.hb-line{width:16px;height:2px;border-radius:1px;background:var(--color-text);}
+
+.cam-area{height:190px;background:var(--cam-bg);position:relative;display:flex;
+  align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
+.cam-feed{position:absolute;inset:0;
+  background:radial-gradient(circle at center,#2a2a35 0%,#111 100%);opacity:.8;}
+.scan-frame{width:190px;height:76px;position:relative;z-index:2;}
+.corner{position:absolute;width:20px;height:20px;border:3px solid #9CA3AF;}
+.c-tl{top:0;left:0;border-right:none;border-bottom:none;}
+.c-tr{top:0;right:0;border-left:none;border-bottom:none;}
+.c-bl{bottom:0;left:0;border-right:none;border-top:none;}
+.c-br{bottom:0;right:0;border-left:none;border-top:none;}
+.scan-line{position:absolute;left:0;right:0;height:2px;background:#9CA3AF;
+  box-shadow:0 0 8px 2px #9CA3AF;animation:scanAnim 2.5s infinite ease-in-out;}
+@keyframes scanAnim{0%{top:0;opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{top:100%;opacity:0;}}
+
+.scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:14px 16px;gap:12px;}
+.scroll::-webkit-scrollbar{display:none;}
+.plate-row{display:flex;align-items:center;justify-content:center;gap:10px;}
+.plate-num{font-size:22px;font-weight:700;letter-spacing:1.5px;}
+.plate-edit{width:28px;height:28px;border-radius:8px;border:none;
+  background:var(--btn-ghost-bg);color:var(--color-subtext);font-size:12px;cursor:pointer;}
+.action-row{display:flex;gap:8px;}
+.btn{flex:1;padding:11px 0;border:none;border-radius:12px;font-family:inherit;
+  font-size:13px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn-ghost{background:transparent;border:1px solid var(--color-subtext);color:var(--color-text);}
+.btn-warn{background:var(--sem-red);color:#fff;}
+
+.bnav{height:62px;flex-shrink:0;display:flex;align-items:center;justify-content:space-around;
+  padding:0 4px 6px;background:var(--color-surface);border-top:1px solid var(--border-light);}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:5px 8px;border-radius:10px;font-size:9px;font-weight:400;
+  border:none;background:transparent;font-family:inherit;flex:1;
+  color:var(--color-subtext);cursor:pointer;}
+.nav-item.on{color:var(--color-primary);font-weight:700;}
+.nav-icon{font-size:18px;line-height:1;}
+
+/* ── 바텀 시트 ── */
+.sheet-overlay{position:absolute;inset:0;z-index:200;background:rgba(0,0,0,0);
+  transition:background .3s ease;display:flex;flex-direction:column;
+  justify-content:flex-end;border-radius:38px;overflow:hidden;}
+.sheet-overlay.open{background:rgba(0,0,0,.55);}
+.sheet-panel{border-radius:24px 24px 0 0;padding:0 0 4px;display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .35s cubic-bezier(.32,1,.23,1);
+  max-height:95%;overflow:hidden;
+  background:var(--color-surface);border-top:1px solid var(--border-color);}
+.sheet-overlay.open .sheet-panel{transform:translateY(0);}
+
+.handle-wrap{padding:10px 0 2px;display:flex;justify-content:center;cursor:grab;flex-shrink:0;}
+.handle{width:40px;height:4px;border-radius:2px;background:var(--handle);}
+.sheet-hdr{padding:4px 20px 10px;display:flex;align-items:center;
+  justify-content:space-between;flex-shrink:0;}
+.sheet-hdr-title{font-size:16px;font-weight:700;color:var(--color-text);}
+.sheet-close{width:28px;height:28px;border-radius:50%;border:none;
+  background:var(--btn-ghost-bg);color:var(--color-subtext);font-size:14px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+.sheet-body{overflow-y:auto;padding:0 20px 4px;display:flex;flex-direction:column;gap:14px;}
+.sheet-body::-webkit-scrollbar{display:none;}
+
+.field{display:flex;flex-direction:column;gap:6px;position:relative;}
+.field-label{font-size:11px;font-weight:700;color:var(--color-subtext);letter-spacing:.3px;}
+.field-label.req::after{content:' *';color:var(--sem-red);}
+
+.plate-display{display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;border-radius:10px;
+  background:var(--input-bg);border:1px solid var(--border-color);}
+.plate-display-num{font-size:18px;font-weight:700;letter-spacing:1.5px;color:var(--color-text);}
+.plate-display-edit{border:none;background:transparent;color:var(--color-accent);
+  font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+.input-wrap{position:relative;display:flex;align-items:center;}
+.text-input{width:100%;padding:11px 14px;border-radius:10px;
+  border:1px solid var(--border-color);background:var(--input-bg);
+  color:var(--color-text);font-family:inherit;font-size:13px;outline:none;
+  transition:border-color .2s;}
+.text-input::placeholder{color:var(--placeholder);}
+.text-input:focus{border-color:var(--color-accent);}
+.text-input.matched{padding-right:50px;border-color:var(--call-green);}
+
+/* 전화 버튼 */
+.call-btn{position:absolute;right:8px;width:32px;height:32px;border-radius:50%;
+  border:1px solid var(--call-green-border);background:var(--call-green-bg);
+  color:var(--call-green);font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;}
+.call-btn:hover{background:rgba(34,197,94,0.25);}
+
+.dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;
+  background:var(--dd-bg);border:1px solid var(--border-color);border-radius:10px;
+  z-index:50;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.15);}
+.dd-item{padding:10px 14px;font-size:13px;font-weight:700;color:var(--color-text);
+  cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border-light);}
+.dd-item:last-child{border-bottom:none;}
+.dd-item:hover,.dd-item.hover{background:var(--btn-ghost-bg);}
+.dd-sub{font-size:10px;color:var(--color-subtext);font-weight:400;}
+
+.chip-row{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{padding:7px 12px;border-radius:20px;border:1px solid var(--border-color);
+  background:var(--input-bg);color:var(--color-subtext);font-family:inherit;
+  font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;}
+.chip.on{background:var(--chip-on-bg);border-color:var(--chip-on-border);color:var(--chip-on-text);}
+
+.etc-input{width:100%;padding:9px 12px;border-radius:10px;
+  border:1px solid var(--border-color);background:var(--input-bg);
+  color:var(--color-text);font-family:inherit;font-size:12px;outline:none;margin-top:6px;}
+.etc-input::placeholder{color:var(--placeholder);}
+.etc-input:focus{border-color:var(--color-accent);}
+
+.datetime-row{display:flex;gap:8px;align-items:center;}
+.dt-input{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border-color);
+  background:var(--input-bg);color:var(--color-text);font-family:inherit;font-size:12px;
+  outline:none;color-scheme:var(--dt-scheme);transition:border-color .2s;}
+.dt-input:focus{border-color:var(--color-accent);}
+.dt-input[readonly]{opacity:.5;}
+
+.divider{height:1px;background:var(--border-light);margin:0 -20px;}
+
+.sheet-btns{display:flex;gap:8px;padding:12px 20px 10px;flex-shrink:0;
+  border-top:1px solid var(--border-light);}
+.s-btn{flex:1;padding:13px 0;border-radius:12px;border:none;font-family:inherit;
+  font-size:14px;font-weight:700;cursor:pointer;}
+.s-btn-cancel{background:var(--btn-ghost-bg);color:var(--color-subtext);}
+.s-btn-confirm{background:var(--color-primary);color:#fff;}
+
+/* 미등록 카드 */
+.unreg-card{border-radius:14px;padding:14px;background:var(--color-surface);}
+
+/* ── 자동 촬영 사진 ── */
+.photo-wrap{display:flex;flex-direction:column;gap:8px;}
+.photo-label{font-size:11px;font-weight:700;color:var(--color-subtext);}
+.photo-thumb{position:relative;width:100%;border-radius:12px;overflow:hidden;
+  border:1px solid var(--border-color);}
+.photo-img-inner{width:100%;height:110px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#1c2a3a 0%,#0e1a28 55%,#1a1f2a 100%);position:relative;}
+.photo-plate-overlay{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,.92);color:#162035;font-size:11px;font-weight:700;
+  padding:3px 10px;border-radius:6px;letter-spacing:1px;white-space:nowrap;}
+.photo-badge-auto{position:absolute;top:8px;left:8px;
+  background:rgba(231,76,60,.9);color:#fff;font-size:9px;font-weight:700;
+  padding:2px 7px;border-radius:6px;letter-spacing:.3px;}
+.photo-time-tag{position:absolute;bottom:8px;right:8px;
+  background:rgba(0,0,0,.65);color:#D8E8F5;font-size:9px;
+  padding:2px 7px;border-radius:6px;font-variant-numeric:tabular-nums;}
+</style>
+</head>
+<body>
+
+<h2>🚗 방문 등록 바텀 시트 v7 — Steel Azure</h2>
+<div class="note">
+  Light Mode: 기획서 5-1 Steel Azure 컬러 시스템 완전 적용<br>
+  1·3번 Dark / 2·4번 Light
+</div>
+
+<div class="phones-row">
+
+  <!-- ════ 1. 인터랙티브 (Dark) ════ -->
+  <div class="pw"><div class="plabel">1. 인터랙티브 (Dark)</div>
+  <div class="phone dark-phone"><div class="ps">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-title">스캔</div>
+      <button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button>
+    </div>
+    <div class="cam-area">
+      <div class="cam-feed"></div>
+      <div class="scan-frame">
+        <div class="corner c-tl"></div><div class="corner c-tr"></div>
+        <div class="corner c-bl"></div><div class="corner c-br"></div>
+        <div class="scan-line"></div>
+      </div>
+    </div>
+    <div class="scroll">
+      <div class="plate-row">
+        <div class="plate-num" style="color:var(--sem-red);">55다 1234</div>
+        <button class="plate-edit">✏️</button>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-ghost" onclick="openSheet('s1')">방문 등록</button>
+        <button class="btn btn-warn">무단주차 처리</button>
+      </div>
+      <div class="unreg-card">
+        <span style="font-size:10px;padding:3px 8px;border-radius:20px;background:rgba(231,76,60,.15);color:#c0392b;font-weight:700;">미등록 차량</span>
+        <div style="font-size:12px;color:var(--color-subtext);text-align:center;padding:10px 0 4px;">단지에 등록된 정보가 없는 차량입니다.</div>
+      </div>
+    </div>
+    <div class="bnav">
+      <button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item on"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item"><div class="nav-icon">🚗</div><span>차량관리</span></button>
+      <button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button>
+      <button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button>
+    </div>
+    <div class="sheet-overlay" id="s1" onclick="handleOverlayClick(event,'s1')">
+      <div class="sheet-panel" id="p1"
+        onmousedown="startDrag(event,'p1','s1')"
+        ontouchstart="startDragTouch(event,'p1','s1')">
+        <div class="handle-wrap"><div class="handle"></div></div>
+        <div class="sheet-hdr">
+          <div class="sheet-hdr-title">방문 차량 등록</div>
+          <button class="sheet-close" onclick="closeSheet('s1')">✕</button>
+        </div>
+        <div class="sheet-body">
+          <div class="field">
+            <div class="field-label req">차량 번호</div>
+            <div class="plate-display">
+              <div class="plate-display-num">55다 1234</div>
+              <button class="plate-display-edit">수정</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label req">방문 동·호수</div>
+            <div class="input-wrap">
+              <input class="text-input" id="unit-input" type="text"
+                placeholder="예) 101동 302호"
+                oninput="onUnitInput(this)"
+                onblur="onUnitBlur()"
+                autocomplete="off">
+              <button class="call-btn" id="call-btn" style="display:none;">📞</button>
+            </div>
+            <div class="dropdown" id="unit-dropdown" style="display:none;"></div>
+          </div>
+          <div class="field">
+            <div class="field-label req">방문 목적</div>
+            <div class="chip-row">
+              <button class="chip on" onclick="selectPurpose(this,'일반방문')">일반방문</button>
+              <button class="chip" onclick="selectPurpose(this,'중고거래')">중고거래</button>
+              <button class="chip" onclick="selectPurpose(this,'기타')">기타</button>
+            </div>
+            <input class="etc-input" id="etc-input" type="text"
+              placeholder="방문 목적을 입력하세요" style="display:none;">
+          </div>
+          <div class="field">
+            <div class="field-label req">입차 허용 기간</div>
+            <div class="chip-row">
+              <button class="chip on" onclick="setPeriod(this,0)">당일</button>
+              <button class="chip" onclick="setPeriod(this,1)">1일</button>
+              <button class="chip" onclick="setPeriod(this,2)">2일</button>
+              <button class="chip" onclick="setPeriod(this,-1)">직접지정</button>
+            </div>
+            <div class="datetime-row">
+              <input class="dt-input" type="date" id="exp-date" readonly>
+              <input class="dt-input" type="time" id="exp-time" readonly>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="field">
+            <div class="field-label">차주 연락처 <span style="color:var(--placeholder);font-weight:400;">(선택)</span></div>
+            <input class="text-input" type="tel" placeholder="010-0000-0000">
+          </div>          <div class="divider"></div>
+          <div class="photo-wrap">
+            <div class="photo-label">📸 자동 촬영 사진</div>
+            <div class="photo-thumb">
+              <div class="photo-img-inner">
+                <svg width="110" height="56" viewBox="0 0 110 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:.4;">
+                  <rect x="10" y="22" width="90" height="26" rx="6" fill="#7890A8"/>
+                  <path d="M22 22 C26 10 34 8 55 8 C76 8 84 10 88 22Z" fill="#607080"/>
+                  <circle cx="26" cy="50" r="8" fill="#3A5068"/><circle cx="26" cy="50" r="4" fill="#1a2535"/>
+                  <circle cx="84" cy="50" r="8" fill="#3A5068"/><circle cx="84" cy="50" r="4" fill="#1a2535"/>
+                  <rect x="30" y="12" width="22" height="12" rx="2" fill="#4A6080" opacity=".6"/>
+                  <rect x="58" y="12" width="22" height="12" rx="2" fill="#4A6080" opacity=".6"/>
+                  <rect x="8" y="28" width="10" height="6" rx="2" fill="#F1C40F" opacity=".7"/>
+                  <rect x="92" y="28" width="10" height="6" rx="2" fill="#E74C3C" opacity=".7"/>
+                </svg>
+                <div class="photo-plate-overlay">55다 1234</div>
+              </div>
+              <div class="photo-badge-auto">AUTO</div>
+              <div class="photo-time-tag">2026.05.14 · 09:12</div>
+            </div>
+          </div>
+
+        </div>
+        <div class="sheet-btns">
+          <button class="s-btn s-btn-cancel" onclick="closeSheet('s1')">취소</button>
+          <button class="s-btn s-btn-confirm">등록 완료</button>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- ════ 2. 드롭다운 검색 중 (Light) ════ -->
+  <div class="pw"><div class="plabel">2. 드롭다운 검색 중 (Light)</div>
+  <div class="phone light-phone"><div class="ps light">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-title">스캔</div>
+      <button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button>
+    </div>
+    <div class="cam-area" style="filter:blur(1.5px);"><div class="cam-feed"></div></div>
+    <div class="scroll" style="filter:blur(1.5px);pointer-events:none;">
+      <div class="plate-row"><div class="plate-num" style="color:#E74C3C;">55다 1234</div></div>
+    </div>
+    <div class="bnav" style="filter:blur(1.5px);pointer-events:none;">
+      <button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item on"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item"><div class="nav-icon">🚗</div><span>차량관리</span></button>
+      <button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button>
+      <button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button>
+    </div>
+    <div class="sheet-overlay open">
+      <div class="sheet-panel" style="transform:translateY(0);">
+        <div class="handle-wrap"><div class="handle"></div></div>
+        <div class="sheet-hdr">
+          <div class="sheet-hdr-title">방문 차량 등록</div>
+          <button class="sheet-close">✕</button>
+        </div>
+        <div class="sheet-body">
+          <div class="field">
+            <div class="field-label req">차량 번호</div>
+            <div class="plate-display">
+              <div class="plate-display-num">55다 1234</div>
+              <button class="plate-display-edit">수정</button>
+            </div>
+          </div>
+          <div class="field" style="position:relative;">
+            <div class="field-label req">방문 동·호수</div>
+            <div class="input-wrap">
+              <input class="text-input" type="text" value="101동 3"
+                style="border-color:#4A90C8;" autocomplete="off">
+            </div>
+            <div class="dropdown" style="display:block;">
+              <div class="dd-item hover"><span>101동 301호</span><span class="dd-sub">김○○ 세대</span></div>
+              <div class="dd-item"><span>101동 302호</span><span class="dd-sub">이○○ 세대</span></div>
+              <div class="dd-item"><span>101동 303호</span><span class="dd-sub">박○○ 세대</span></div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label req">방문 목적</div>
+            <div class="chip-row">
+              <button class="chip on">일반방문</button>
+              <button class="chip">중고거래</button>
+              <button class="chip">기타</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label req">입차 허용 기간</div>
+            <div class="chip-row">
+              <button class="chip on">당일</button>
+              <button class="chip">1일</button>
+              <button class="chip">2일</button>
+              <button class="chip">직접지정</button>
+            </div>
+            <div class="datetime-row">
+              <input class="dt-input" type="date" value="2026-05-14" readonly>
+              <input class="dt-input" type="time" value="23:59" readonly>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="field">
+            <div class="field-label">차주 연락처 <span style="color:var(--placeholder);font-weight:400;">(선택)</span></div>
+            <input class="text-input" type="tel" placeholder="010-0000-0000">
+          </div>          <div class="divider"></div>
+          <div class="photo-wrap">
+            <div class="photo-label">📸 자동 촬영 사진</div>
+            <div class="photo-thumb">
+              <div class="photo-img-inner">
+                <svg width="110" height="56" viewBox="0 0 110 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:.4;">
+                  <rect x="10" y="22" width="90" height="26" rx="6" fill="#7890A8"/>
+                  <path d="M22 22 C26 10 34 8 55 8 C76 8 84 10 88 22Z" fill="#607080"/>
+                  <circle cx="26" cy="50" r="8" fill="#3A5068"/><circle cx="26" cy="50" r="4" fill="#1a2535"/>
+                  <circle cx="84" cy="50" r="8" fill="#3A5068"/><circle cx="84" cy="50" r="4" fill="#1a2535"/>
+                  <rect x="30" y="12" width="22" height="12" rx="2" fill="#4A6080" opacity=".6"/>
+                  <rect x="58" y="12" width="22" height="12" rx="2" fill="#4A6080" opacity=".6"/>
+                  <rect x="8" y="28" width="10" height="6" rx="2" fill="#F1C40F" opacity=".7"/>
+                  <rect x="92" y="28" width="10" height="6" rx="2" fill="#E74C3C" opacity=".7"/>
+                </svg>
+                <div class="photo-plate-overlay">55다 1234</div>
+              </div>
+              <div class="photo-badge-auto">AUTO</div>
+              <div class="photo-time-tag">2026.05.14 · 09:12</div>
+            </div>
+          </div>
+
+        </div>
+        <div class="sheet-btns">
+          <button class="s-btn s-btn-cancel">취소</button>
+          <button class="s-btn s-btn-confirm">등록 완료</button>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- ════ 3. 세대 매칭 + 전화 버튼 (Dark) ════ -->
+  <div class="pw"><div class="plabel">3. 세대 매칭 — 전화 버튼 (Dark)</div>
+  <div class="phone dark-phone"><div class="ps">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-title">스캔</div>
+      <button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button>
+    </div>
+    <div class="cam-area" style="filter:blur(1.5px);"><div class="cam-feed"></div></div>
+    <div class="scroll" style="filter:blur(1.5px);pointer-events:none;">
+      <div class="plate-row"><div class="plate-num" style="color:#E74C3C;">55다 1234</div></div>
+    </div>
+    <div class="bnav" style="filter:blur(1.5px);pointer-events:none;">
+      <button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item on"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item"><div class="nav-icon">🚗</div><span>차량관리</span></button>
+      <button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button>
+      <button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button>
+    </div>
+    <div class="sheet-overlay open">
+      <div class="sheet-panel" style="transform:translateY(0);">
+        <div class="handle-wrap"><div class="handle"></div></div>
+        <div class="sheet-hdr">
+          <div class="sheet-hdr-title">방문 차량 등록</div>
+          <button class="sheet-close">✕</button>
+        </div>
+        <div class="sheet-body">
+          <div class="field">
+            <div class="field-label req">차량 번호</div>
+            <div class="plate-display">
+              <div class="plate-display-num">55다 1234</div>
+              <button class="plate-display-edit">수정</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label req">방문 동·호수</div>
+            <div class="input-wrap">
+              <input class="text-input matched" type="text" value="101동 302호" autocomplete="off">
+              <button class="call-btn">📞</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label req">방문 목적</div>
+            <div class="chip-row">
+              <button class="chip">일반방문</button>
+              <button class="chip on">중고거래</button>
+              <button class="chip">기타</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label req">입차 허용 기간</div>
+            <div class="chip-row">
+              <button class="chip on">당일</button>
+              <button class="chip">1일</button>
+              <button class="chip">2일</button>
+              <button class="chip">직접지정</button>
+            </div>
+            <div class="datetime-row">
+              <input class="dt-input" type="date" value="2026-05-14" readonly>
+              <input class="dt-input" type="time" value="23:59" readonly>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="field">
+            <div class="field-label">차주 연락처 <span style="color:var(--placeholder);font-weight:400;">(선택)</span></div>
+            <input class="text-input" type="tel" placeholder="010-0000-0000">
+          </div>          <div class="divider"></div>
+          <div class="photo-wrap">
+            <div class="photo-label">📸 자동 촬영 사진</div>
+            <div class="photo-thumb">
+              <div class="photo-img-inner">
+                <svg width="110" height="56" viewBox="0 0 110 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:.4;">
+                  <rect x="10" y="22" width="90" height="26" rx="6" fill="#7890A8"/>
+                  <path d="M22 22 C26 10 34 8 55 8 C76 8 84 10 88 22Z" fill="#607080"/>
+                  <circle cx="26" cy="50" r="8" fill="#3A5068"/><circle cx="26" cy="50" r="4" fill="#1a2535"/>
+                  <circle cx="84" cy="50" r="8" fill="#3A5068"/><circle cx="84" cy="50" r="4" fill="#1a2535"/>
+                  <rect x="30" y="12" width="22" height="12" rx="2" fill="#4A6080" opacity=".6"/>
+                  <rect x="58" y="12" width="22" height="12" rx="2" fill="#4A6080" opacity=".6"/>
+                  <rect x="8" y="28" width="10" height="6" rx="2" fill="#F1C40F" opacity=".7"/>
+                  <rect x="92" y="28" width="10" height="6" rx="2" fill="#E74C3C" opacity=".7"/>
+                </svg>
+                <div class="photo-plate-overlay">55다 1234</div>
+              </div>
+              <div class="photo-badge-auto">AUTO</div>
+              <div class="photo-time-tag">2026.05.14 · 09:12</div>
+            </div>
+          </div>
+
+        </div>
+        <div class="sheet-btns">
+          <button class="s-btn s-btn-cancel">취소</button>
+          <button class="s-btn s-btn-confirm">등록 완료</button>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- ════ 4. 기타 목적 + 직접지정 (Light) ════ -->
+  <div class="pw"><div class="plabel">4. 기타 목적 + 직접지정 (Light)</div>
+  <div class="phone light-phone"><div class="ps light">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-title">스캔</div>
+      <button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button>
+    </div>
+    <div class="cam-area" style="filter:blur(1.5px);"><div class="cam-feed"></div></div>
+    <div class="scroll" style="filter:blur(1.5px);pointer-events:none;">
+      <div class="plate-row"><div class="plate-num" style="color:#E74C3C;">55다 1234</div></div>
+    </div>
+    <div class="bnav" style="filter:blur(1.5px);pointer-events:none;">
+      <button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item on"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item"><div class="nav-icon">🚗</div><span>차량관리</span></button>
+      <button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button>
+      <button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button>
+    </div>
+    <div class="sheet-overlay open">
+      <div class="sheet-panel" style="transform:translateY(0);">
+        <div class="handle-wrap"><div class="handle"></div></div>
+        <div class="sheet-hdr">
+          <div class="sheet-hdr-title">방문 차량 등록</div>
+          <button class="sheet-close">✕</button>
+        </div>
+        <div class="sheet-body">
+          <div class="field">
+            <div class="field-label req">차량 번호</div>
+            <div class="plate-display">
+              <div class="plate-display-num">55다 1234</div>
+              <button class="plate-display-edit">수정</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label req">방문 동·호수</div>
+            <div class="input-wrap">
+              <input class="text-input matched" type="text" value="203동 1501호" autocomplete="off">
+              <button class="call-btn">📞</button>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label req">방문 목적</div>
+            <div class="chip-row">
+              <button class="chip">일반방문</button>
+              <button class="chip">중고거래</button>
+              <button class="chip on">기타</button>
+            </div>
+            <input class="etc-input" type="text" placeholder="방문 목적을 입력하세요" value="반려동물 미용">
+          </div>
+          <div class="field">
+            <div class="field-label req">입차 허용 기간</div>
+            <div class="chip-row">
+              <button class="chip">당일</button>
+              <button class="chip">1일</button>
+              <button class="chip">2일</button>
+              <button class="chip on">직접지정</button>
+            </div>
+            <div class="datetime-row">
+              <input class="dt-input" type="date" value="2026-05-20" style="border-color:#4A90C8;">
+              <input class="dt-input" type="time" value="18:00" style="border-color:#4A90C8;">
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="field">
+            <div class="field-label">차주 연락처 <span style="color:var(--placeholder);font-weight:400;">(선택)</span></div>
+            <input class="text-input" type="tel" value="010-9876-5432">
+          </div>          <div class="divider"></div>
+          <div class="photo-wrap">
+            <div class="photo-label">📸 자동 촬영 사진</div>
+            <div class="photo-thumb">
+              <div class="photo-img-inner">
+                <svg width="110" height="56" viewBox="0 0 110 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:.4;">
+                  <rect x="10" y="22" width="90" height="26" rx="6" fill="#7890A8"/>
+                  <path d="M22 22 C26 10 34 8 55 8 C76 8 84 10 88 22Z" fill="#607080"/>
+                  <circle cx="26" cy="50" r="8" fill="#3A5068"/><circle cx="26" cy="50" r="4" fill="#1a2535"/>
+                  <circle cx="84" cy="50" r="8" fill="#3A5068"/><circle cx="84" cy="50" r="4" fill="#1a2535"/>
+                  <rect x="30" y="12" width="22" height="12" rx="2" fill="#4A6080" opacity=".6"/>
+                  <rect x="58" y="12" width="22" height="12" rx="2" fill="#4A6080" opacity=".6"/>
+                  <rect x="8" y="28" width="10" height="6" rx="2" fill="#F1C40F" opacity=".7"/>
+                  <rect x="92" y="28" width="10" height="6" rx="2" fill="#E74C3C" opacity=".7"/>
+                </svg>
+                <div class="photo-plate-overlay">55다 1234</div>
+              </div>
+              <div class="photo-badge-auto">AUTO</div>
+              <div class="photo-time-tag">2026.05.14 · 09:12</div>
+            </div>
+          </div>
+
+        </div>
+        <div class="sheet-btns">
+          <button class="s-btn s-btn-cancel">취소</button>
+          <button class="s-btn s-btn-confirm">등록 완료</button>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+</div>
+
+<script>
+const UNITS = [
+  {label:'101동 301호', name:'김○○'},
+  {label:'101동 302호', name:'이○○'},
+  {label:'101동 303호', name:'박○○'},
+  {label:'101동 401호', name:'최○○'},
+  {label:'102동 101호', name:'정○○'},
+  {label:'102동 202호', name:'강○○'},
+  {label:'203동 1501호', name:'윤○○'},
+  {label:'203동 1502호', name:'장○○'},
+];
+function normalize(s){ return s.replace(/\s/g,'').toLowerCase(); }
+
+function onUnitInput(el){
+  const val = el.value.trim();
+  const dd  = document.getElementById('unit-dropdown');
+  const cb  = document.getElementById('call-btn');
+  const exact = UNITS.find(u => normalize(u.label) === normalize(val));
+  if(exact){ el.classList.add('matched'); cb.style.display='flex'; }
+  else { el.classList.remove('matched'); cb.style.display='none'; }
+  if(val.length < 1){ dd.style.display='none'; return; }
+  const filtered = UNITS.filter(u => normalize(u.label).includes(normalize(val)));
+  if(filtered.length === 0){ dd.style.display='none'; return; }
+  dd.innerHTML = filtered.map(u =>
+    `<div class="dd-item" onmousedown="selectUnit('${u.label}')"><span>${u.label}</span><span class="dd-sub">${u.name} 세대</span></div>`
+  ).join('');
+  dd.style.display='block';
+}
+function selectUnit(label){
+  const inp = document.getElementById('unit-input');
+  const dd  = document.getElementById('unit-dropdown');
+  const cb  = document.getElementById('call-btn');
+  inp.value = label;
+  inp.classList.add('matched');
+  cb.style.display='flex';
+  dd.style.display='none';
+}
+function onUnitBlur(){
+  setTimeout(()=>{ const dd=document.getElementById('unit-dropdown'); if(dd) dd.style.display='none'; },150);
+}
+function selectPurpose(el, val){
+  el.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  const etc = document.getElementById('etc-input');
+  etc.style.display = (val==='기타') ? 'block' : 'none';
+  if(val==='기타') etc.focus();
+}
+function toDateStr(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function setPeriod(el, days){
+  el.closest('.chip-row').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  const field = el.closest('.field');
+  const dInp  = field.querySelector('input[type="date"]');
+  const tInp  = field.querySelector('input[type="time"]');
+  const now   = new Date();
+  if(days === -1){
+    dInp.removeAttribute('readonly'); dInp.style.opacity='1'; dInp.style.borderColor='#4A90C8';
+    tInp.removeAttribute('readonly'); tInp.style.opacity='1'; tInp.style.borderColor='#4A90C8';
+    const def = new Date(now); def.setDate(def.getDate()+1);
+    dInp.value = toDateStr(def); tInp.value = '23:59';
+  } else {
+    const exp = new Date(now);
+    if(days===0){ exp.setHours(23,59,0,0); }
+    else { exp.setDate(exp.getDate()+days); exp.setHours(23,59,0,0); }
+    dInp.setAttribute('readonly',''); dInp.style.opacity='.5'; dInp.style.borderColor='';
+    tInp.setAttribute('readonly',''); tInp.style.opacity='.5'; tInp.style.borderColor='';
+    dInp.value = toDateStr(exp); tInp.value = '23:59';
+  }
+}
+window.addEventListener('DOMContentLoaded', ()=>{
+  const now = new Date();
+  const d = document.getElementById('exp-date');
+  const t = document.getElementById('exp-time');
+  if(d) d.value = toDateStr(now);
+  if(t) t.value = '23:59';
+});
+function openSheet(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.style.display='flex';
+  requestAnimationFrame(()=>el.classList.add('open'));
+}
+function closeSheet(id){
+  const el=document.getElementById(id);
+  if(el) el.classList.remove('open');
+}
+function handleOverlayClick(e,id){
+  if(e.target===document.getElementById(id)) closeSheet(id);
+}
+let ds=null;
+function startDrag(e,pId,sId){
+  ds={startY:e.clientY,panel:document.getElementById(pId),sheetId:sId};
+  document.addEventListener('mousemove',onDM);
+  document.addEventListener('mouseup',onDU);
+  e.stopPropagation();
+}
+function onDM(e){if(!ds)return;const dy=e.clientY-ds.startY;if(dy>0){ds.panel.style.transition='none';ds.panel.style.transform=`translateY(${dy}px)`;}}
+function onDU(e){if(!ds)return;const dy=e.clientY-ds.startY;ds.panel.style.transition='';if(dy>80)closeSheet(ds.sheetId);ds.panel.style.transform='';document.removeEventListener('mousemove',onDM);document.removeEventListener('mouseup',onDU);ds=null;}
+let ts=null;
+function startDragTouch(e,pId,sId){
+  ts={startY:e.touches[0].clientY,panel:document.getElementById(pId),sheetId:sId};
+  document.addEventListener('touchmove',onTM,{passive:false});
+  document.addEventListener('touchend',onTE);
+  e.stopPropagation();
+}
+function onTM(e){if(!ts)return;const dy=e.touches[0].clientY-ts.startY;if(dy>0){e.preventDefault();ts.panel.style.transition='none';ts.panel.style.transform=`translateY(${dy}px)`;}}
+function onTE(e){if(!ts)return;const dy=e.changedTouches[0].clientY-ts.startY;ts.panel.style.transition='';if(dy>80)closeSheet(ts.sheetId);ts.panel.style.transform='';document.removeEventListener('touchmove',onTM);document.removeEventListener('touchend',onTE);ts=null;}
+</script>
+</body>
+</html>

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkingOwner — 단지관리 탭 v2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans','Noto Sans KR',sans-serif;background:#0a0f18;
+  display:flex;flex-direction:column;align-items:center;padding:32px 20px 80px;gap:12px;}
+h2{color:#D8E8F5;font-size:15px;font-weight:700;text-align:center;letter-spacing:.5px;margin-top:36px;}
+.note{color:#7890A8;font-size:11px;text-align:center;line-height:1.8;}
+.phones-row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start;}
+.pw{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.plabel{color:#9CA3AF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;}
+
+.phone{width:320px;height:680px;background:#080808;border-radius:48px;padding:12px;
+  box-shadow:0 0 0 1px #1e1e1e,0 0 0 3px #080808,0 28px 70px rgba(0,0,0,.85),
+  inset 0 1px 0 rgba(255,255,255,.06);position:relative;flex-shrink:0;}
+.phone::before{content:'';position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  width:98px;height:28px;background:#000;border-radius:16px;z-index:10;}
+.ps{width:100%;height:100%;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;position:relative;}
+.L{background:#F0F4F9;} .D{background:#0C1520;}
+
+/* 상태바 & 헤더 */
+.sbar{height:44px;flex-shrink:0;display:flex;align-items:flex-end;
+  justify-content:space-between;padding:0 18px 6px;font-size:10px;font-weight:700;}
+.L .sbar{color:#162035;} .D .sbar{color:#D8E8F5;}
+.sbar-r{display:flex;gap:4px;align-items:center;}
+.hdr{flex-shrink:0;padding:8px 16px 12px;display:flex;align-items:center;justify-content:space-between;}
+.L .hdr{background:#1B3D6F;} .D .hdr{background:#142030;border-bottom:1px solid rgba(74,144,200,.12);}
+.hdr-left{display:flex;flex-direction:column;gap:2px;}
+.hdr-title{color:#fff;font-size:15px;font-weight:700;} .D .hdr-title{color:#D8E8F5;}
+.hdr-complex{color:rgba(255,255,255,.65);font-size:11px;display:flex;align-items:center;gap:4px;}
+.D .hdr-complex{color:#7890A8;}
+.role-badge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:700;
+  background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25);}
+.D .role-badge{background:rgba(74,144,200,.15);color:#4A90C8;border-color:rgba(74,144,200,.3);}
+.hamburger-btn{width:36px;height:36px;border-radius:10px;border:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:rgba(255,255,255,.15);flex-shrink:0;padding:0;}
+.D .hamburger-btn{background:rgba(74,144,200,.12);}
+.hb-line{width:16px;height:2px;border-radius:1px;background:#fff;} .D .hb-line{background:#D8E8F5;}
+
+/* 서브탭 */
+.subtab-bar{flex-shrink:0;display:flex;padding:0 16px;gap:4px;}
+.L .subtab-bar{background:#1B3D6F;padding-bottom:0;} .D .subtab-bar{background:#142030;border-bottom:1px solid rgba(74,144,200,.1);}
+.stab{flex:1;padding:8px 0;font-size:12px;font-weight:700;border:none;cursor:pointer;
+  font-family:inherit;border-bottom:2px solid transparent;background:transparent;
+  display:flex;align-items:center;justify-content:center;gap:4px;}
+.L .stab{color:rgba(255,255,255,.55);} .L .stab.on{color:#fff;border-bottom-color:#fff;}
+.D .stab{color:#7890A8;} .D .stab.on{color:#4A90C8;border-bottom-color:#4A90C8;}
+.subtab-badge{display:inline-flex;align-items:center;justify-content:center;
+  background:#E74C3C;color:#fff;font-size:9px;font-weight:700;
+  height:16px;min-width:16px;border-radius:8px;padding:0 4px;}
+
+/* 스크롤 영역 & 공통 */
+.scroll{flex:1;overflow-y:auto;padding:14px 14px;display:flex;flex-direction:column;gap:12px;}
+.scroll::-webkit-scrollbar{display:none;}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;}
+.sec-title{font-size:12px;font-weight:700;}
+.L .sec-title{color:#162035;} .D .sec-title{color:#D8E8F5;}
+.sec-more{font-size:10px;background:none;border:none;cursor:pointer;font-family:inherit;padding:0;}
+.L .sec-more{color:#1B3D6F;} .D .sec-more{color:#4A90C8;}
+.sec-btn{font-size:10px;font-weight:700;padding:4px 10px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;}
+.L .sec-btn{background:rgba(27,61,111,.08);color:#1B3D6F;} .D .sec-btn{background:rgba(74,144,200,.12);color:#4A90C8;}
+
+/* 가입 요청 카드 */
+.req-banner{border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;}
+.L .req-banner{background:#fff;box-shadow:0 2px 8px rgba(27,61,111,.08);border:1px solid rgba(231,76,60,.2);}
+.D .req-banner{background:#142030;border:1px solid rgba(231,76,60,.2);}
+.req-icon{width:36px;height:36px;border-radius:10px;background:rgba(231,76,60,.12);
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.req-info{flex:1;}
+.req-title{font-size:12px;font-weight:700;}
+.L .req-title{color:#162035;} .D .req-title{color:#D8E8F5;}
+.req-sub{font-size:10px;margin-top:2px;}
+.L .req-sub{color:#607080;} .D .req-sub{color:#7890A8;}
+.req-cnt{font-size:18px;font-weight:700;color:#E74C3C;flex-shrink:0;}
+
+/* 리스트 아이템 공통 */
+.list-wrap{display:flex;flex-direction:column;gap:8px;}
+.item-card{border-radius:12px;padding:12px 13px;display:flex;align-items:center;gap:10px;}
+.L .item-card{background:#fff;box-shadow:0 1px 6px rgba(27,61,111,.06);}
+.D .item-card{background:#142030;}
+.avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;}
+.av-blue{background:rgba(74,144,200,.15);color:#4A90C8;}
+.av-green{background:rgba(46,204,113,.15);color:#2ECC71;}
+.av-yellow{background:rgba(241,196,15,.15);color:#F1C40F;}
+.item-info{flex:1;min-width:0;}
+.item-name{font-size:12px;font-weight:700;}
+.L .item-name{color:#162035;} .D .item-name{color:#D8E8F5;}
+.item-sub{font-size:10px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.L .item-sub{color:#607080;} .D .item-sub{color:#7890A8;}
+.req-btns{display:flex;gap:5px;flex-shrink:0;}
+.rbtn{padding:5px 10px;border-radius:8px;border:none;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;}
+.rbtn-ok{background:rgba(46,204,113,.15);color:#27ae60;} .rbtn-no{background:rgba(231,76,60,.1);color:#E74C3C;}
+.item-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.role-chip{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:700;}
+.rc-admin{background:rgba(74,144,200,.15);color:#2D6098;} .D .rc-admin{color:#4A90C8;}
+.rc-manager{background:rgba(46,204,113,.12);color:#27ae60;}
+.rc-resident{background:rgba(156,163,175,.12);color:#607080;} .D .rc-resident{color:#9CA3AF;}
+.call-btn-sm{width:26px;height:26px;border-radius:50%;border:1px solid rgba(34,197,94,.3);
+  background:rgba(34,197,94,.12);color:#22C55E;font-size:12px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;}
+
+/* 주차 구역 카드 */
+.zone-summary{border-radius:14px;padding:14px;display:flex;gap:16px;}
+.L .zone-summary{background:#fff;box-shadow:0 2px 8px rgba(27,61,111,.07);} .D .zone-summary{background:#142030;}
+.zone-sum-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.zone-sum-val{font-size:22px;font-weight:700;}
+.zone-sum-lbl{font-size:9px;}
+.L .zone-sum-lbl{color:#607080;} .D .zone-sum-lbl{color:#7890A8;}
+.zone-card{border-radius:14px;padding:13px 14px;display:flex;flex-direction:column;gap:10px;}
+.L .zone-card{background:#fff;box-shadow:0 2px 8px rgba(27,61,111,.07);} .D .zone-card{background:#142030;}
+.zone-top{display:flex;align-items:center;justify-content:space-between;}
+.zone-name{font-size:13px;font-weight:700;}
+.L .zone-name{color:#162035;} .D .zone-name{color:#D8E8F5;}
+.zone-edit-btn{font-size:10px;font-weight:700;padding:4px 9px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;}
+.L .zone-edit-btn{background:rgba(27,61,111,.07);color:#1B3D6F;} .D .zone-edit-btn{background:rgba(74,144,200,.1);color:#4A90C8;}
+.zone-stat{display:flex;gap:10px;align-items:center;}
+.zone-used{font-size:11px;font-weight:700;}
+.L .zone-used{color:#162035;} .D .zone-used{color:#D8E8F5;}
+.zone-total{font-size:10px;}
+.L .zone-total{color:#9CA3AF;} .D .zone-total{color:#607080;}
+.zone-status-chip{font-size:9px;padding:2px 8px;border-radius:20px;font-weight:700;margin-left:auto;}
+.zs-ok{background:rgba(46,204,113,.12);color:#27ae60;}
+.zs-warn{background:rgba(241,196,15,.12);color:#b8960a;}
+.zs-full{background:rgba(231,76,60,.12);color:#c0392b;}
+.zone-bar-wrap{height:6px;border-radius:3px;overflow:hidden;}
+.L .zone-bar-wrap{background:rgba(27,61,111,.1);} .D .zone-bar-wrap{background:rgba(74,144,200,.1);}
+.zone-bar{height:100%;border-radius:3px;}
+.zbar-ok{background:linear-gradient(90deg,#1B3D6F,#4A90C8);} .D .zbar-ok{background:linear-gradient(90deg,#2D6098,#78B8E8);}
+.zbar-warn{background:linear-gradient(90deg,#F1C40F,#f39c12);}
+.zbar-full{background:linear-gradient(90deg,#E74C3C,#c0392b);}
+
+/* FAB 버튼 */
+.fab{position:absolute;bottom:76px;right:16px;width:52px;height:52px;border-radius:26px;
+  display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:300;
+  border:none;cursor:pointer;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,.2);
+  transition:transform .2s; font-family:inherit;}
+.fab:active{transform:scale(0.92);}
+.L .fab{background:#1B3D6F;color:#fff;}
+.D .fab{background:#4A90C8;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.4);}
+
+/* 바텀 시트 공통 */
+.sheet-overlay{position:absolute;inset:0;z-index:200;background:rgba(0,0,0,0);
+  transition:background .3s ease;display:flex;flex-direction:column;
+  justify-content:flex-end;border-radius:38px;overflow:hidden; pointer-events:none;}
+.sheet-overlay.open{background:rgba(0,0,0,.55); pointer-events:auto;}
+.sheet-panel{border-radius:24px 24px 0 0;padding:0 0 4px;display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .35s cubic-bezier(.32,1,.23,1);
+  max-height:90%;overflow:hidden;}
+.sheet-overlay.open .sheet-panel{transform:translateY(0);}
+.L .sheet-panel{background:#fff;} .D .sheet-panel{background:#142030;border-top:1px solid rgba(74,144,200,.15);}
+.handle-wrap{padding:10px 0 4px;display:flex;justify-content:center;flex-shrink:0;}
+.handle{width:40px;height:4px;border-radius:2px;}
+.L .handle{background:rgba(0,0,0,.12);} .D .handle{background:rgba(255,255,255,.15);}
+.sheet-hdr{padding:4px 20px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.sheet-hdr-title{font-size:16px;font-weight:700;}
+.L .sheet-hdr-title{color:#162035;} .D .sheet-hdr-title{color:#D8E8F5;}
+.sheet-close{width:28px;height:28px;border-radius:50%;border:none;font-size:14px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;}
+.L .sheet-close{background:rgba(27,61,111,.07);color:#607080;} .D .sheet-close{background:rgba(74,144,200,.1);color:#7890A8;}
+.sheet-body{overflow-y:auto;padding:0 20px 8px;display:flex;flex-direction:column;gap:14px;}
+.sheet-body::-webkit-scrollbar{display:none;}
+.sheet-btns{display:flex;gap:8px;padding:12px 20px 10px;flex-shrink:0;border-top:1px solid;}
+.L .sheet-btns{border-color:rgba(27,61,111,.08);} .D .sheet-btns{border-color:rgba(74,144,200,.1);}
+.s-btn{flex:1;padding:13px 0;border-radius:12px;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;}
+.L .s-btn-cancel{background:rgba(27,61,111,.07);color:#607080;} .D .s-btn-cancel{background:rgba(74,144,200,.1);color:#7890A8;}
+.L .s-btn-confirm{background:#1B3D6F;color:#fff;} .D .s-btn-confirm{background:#4A90C8;color:#fff;}
+.s-btn-danger{background:rgba(231,76,60,.1);color:#E74C3C;}
+
+/* 폼 필드 */
+.field{display:flex;flex-direction:column;gap:6px;}
+.field-label{font-size:11px;font-weight:700;}
+.L .field-label{color:#607080;} .D .field-label{color:#7890A8;}
+.text-input{width:100%;padding:11px 14px;border-radius:10px;border:1px solid;
+  font-family:inherit;font-size:13px;outline:none;}
+.L .text-input{border-color:#C8D6E5;background:#fff;color:#162035;}
+.D .text-input{border-color:rgba(74,144,200,.2);background:#0C1520;color:#D8E8F5;}
+.L .text-input::placeholder{color:#9EB3C8;} .D .text-input::placeholder{color:#3A5068;}
+.counter-row{display:flex;align-items:center;gap:10px;}
+.cnt-btn{width:36px;height:36px;border-radius:10px;border:none;font-size:18px;font-weight:700;cursor:pointer;}
+.L .cnt-btn{background:rgba(27,61,111,.08);color:#1B3D6F;} .D .cnt-btn{background:rgba(74,144,200,.12);color:#4A90C8;}
+.cnt-val{font-size:22px;font-weight:700;min-width:40px;text-align:center;}
+.L .cnt-val{color:#162035;} .D .cnt-val{color:#D8E8F5;}
+.cnt-lbl{font-size:11px;}
+.L .cnt-lbl{color:#9CA3AF;} .D .cnt-lbl{color:#607080;}
+.role-select-row{display:flex;gap:6px;}
+.role-opt{flex:1;padding:8px 0;border-radius:10px;border:1px solid;font-family:inherit;
+  font-size:11px;font-weight:700;cursor:pointer;text-align:center;}
+.L .role-opt{border-color:#C8D6E5;background:#F0F4F9;color:#607080;}
+.D .role-opt{border-color:rgba(74,144,200,.2);background:#0C1520;color:#7890A8;}
+.L .role-opt.on{border-color:#1B3D6F;background:rgba(27,61,111,.07);color:#1B3D6F;}
+.D .role-opt.on{border-color:#4A90C8;background:rgba(74,144,200,.1);color:#4A90C8;}
+.divider{height:1px;margin:0 -20px;}
+.L .divider{background:rgba(27,61,111,.08);} .D .divider{background:rgba(74,144,200,.1);}
+
+/* 세대원 상세 시트 전용 */
+.profile-block{display:flex;align-items:center;gap:12px;padding:4px 0 8px;}
+.profile-avatar{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;
+  background:rgba(74,144,200,.15);color:#4A90C8;}
+.profile-name{font-size:16px;font-weight:700;}
+.L .profile-name{color:#162035;} .D .profile-name{color:#D8E8F5;}
+.profile-unit{font-size:11px;margin-top:3px;}
+.L .profile-unit{color:#607080;} .D .profile-unit{color:#7890A8;}
+.info-row{display:flex;gap:8px;}
+.info-chip{flex:1;border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;}
+.L .info-chip{background:#F0F4F9;} .D .info-chip{background:#0C1520;}
+.ic-lbl{font-size:9px;font-weight:700;}
+.L .ic-lbl{color:#9CA3AF;} .D .ic-lbl{color:#607080;}
+.ic-val{font-size:12px;font-weight:700;}
+.L .ic-val{color:#162035;} .D .ic-val{color:#D8E8F5;}
+.car-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;margin-top:6px;}
+.L .car-row{background:#F0F4F9;} .D .car-row{background:#0C1520;}
+.car-plate{font-size:14px;font-weight:700;letter-spacing:1.5px;}
+.L .car-plate{color:#162035;} .D .car-plate{color:#D8E8F5;}
+.car-sub{font-size:10px;margin-top:2px;}
+.L .car-sub{color:#607080;} .D .car-sub{color:#7890A8;}
+.call-btn-lg{width:34px;height:34px;border-radius:50%;border:1px solid rgba(34,197,94,.3);
+  background:rgba(34,197,94,.12);color:#22C55E;font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0;}
+
+/* 탭바 */
+.bnav{height:62px;flex-shrink:0;display:flex;align-items:center;justify-content:space-around;padding:0 4px 6px;}
+.L .bnav{background:#fff;border-top:1px solid rgba(27,61,111,.1);}
+.D .bnav{background:#142030;border-top:1px solid rgba(74,144,200,.1);}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+  padding:5px 8px;border-radius:10px;font-size:9px;font-weight:400;
+  border:none;background:transparent;font-family:inherit;position:relative;flex:1;}
+.nav-icon{font-size:18px;line-height:1;}
+.L .nav-item{color:#607080;} .L .nav-item.on{color:#1B3D6F;font-weight:700;}
+.D .nav-item{color:#7890A8;} .D .nav-item.on{color:#4A90C8;font-weight:700;}
+.tab-badge{position:absolute;top:2px;right:12px;background:#E74C3C;color:#fff;
+  font-size:8px;font-weight:700;min-width:14px;height:14px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid;}
+.L .tab-badge{border-color:#fff;} .D .tab-badge{border-color:#142030;}
+</style>
+</head>
+<body>
+
+<h2>🏢 단지관리 탭 v2 (FAB 적용)</h2>
+<div class="note">
+  1번, 2번 화면의 우측 하단 <strong>[＋] FAB 버튼</strong>을 클릭하여 팝업 폼을 확인하세요.
+</div>
+
+<div class="phones-row">
+
+  <!-- ════ 1. 세대원 탭 — Light ════ -->
+  <div class="pw"><div class="plabel">1. 세대원 관리 (Light)</div>
+  <div class="phone"><div class="ps L">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-left">
+        <div class="hdr-title">단지관리</div>
+        <div class="hdr-complex">🏢 현대아파트 · <span class="role-badge">단지관리자</span></div>
+      </div>
+      <button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button>
+    </div>
+    <div class="subtab-bar L">
+      <button class="stab L on">👥 세대원 <span class="subtab-badge">3</span></button>
+      <button class="stab L">🅿️ 주차구역</button>
+    </div>
+    <div class="scroll">
+      <div class="req-banner L">
+        <div class="req-icon">🔔</div>
+        <div class="req-info"><div class="req-title">세대원 가입 요청</div><div class="req-sub">승인 대기 중인 요청이 있습니다</div></div>
+        <div class="req-cnt">3</div>
+      </div>
+      <div class="list-wrap">
+        <div class="item-card L">
+          <div class="avatar av-blue">김</div>
+          <div class="item-info"><div class="item-name">김민준</div><div class="item-sub">101동 302호 · 입주민</div></div>
+          <div class="req-btns"><button class="rbtn rbtn-ok">승인</button><button class="rbtn rbtn-no">반려</button></div>
+        </div>
+      </div>
+      <div class="sec-hdr" style="margin-top:8px;">
+        <div class="sec-title">세대원 목록 · 24명</div>
+        <button class="sec-more">전체 보기 ›</button>
+      </div>
+      <div class="list-wrap">
+        <div class="item-card L">
+          <div class="avatar av-blue">홍</div>
+          <div class="item-info"><div class="item-name">홍길동</div><div class="item-sub">101동 302호 · 차량 1대</div></div>
+          <div class="item-right"><div class="role-chip rc-admin">단지관리자</div><button class="call-btn-sm">📞</button></div>
+        </div>
+        <div class="item-card L">
+          <div class="avatar av-green">최</div>
+          <div class="item-info"><div class="item-name">최현우</div><div class="item-sub">101동 401호 · 차량 2대</div></div>
+          <div class="item-right"><div class="role-chip rc-manager">주차관리인</div><button class="call-btn-sm">📞</button></div>
+        </div>
+        <div class="item-card L">
+          <div class="avatar av-yellow">정</div>
+          <div class="item-info"><div class="item-name">정수빈</div><div class="item-sub">102동 202호 · 차량 1대</div></div>
+          <div class="item-right"><div class="role-chip rc-resident">입주민</div></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 세대원 추가 FAB -->
+    <button class="fab L" onclick="openSheet('sheet-add-res')">＋</button>
+
+    <div class="bnav">
+      <button class="nav-item L"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item L"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item L"><div class="nav-icon">🚗</div><span>차량관리</span><div class="tab-badge L">5</div></button>
+      <button class="nav-item on L"><div class="nav-icon">🏢</div><span>단지관리</span><div class="tab-badge L">3</div></button>
+      <button class="nav-item L"><div class="nav-icon">💬</div><span>소통</span><div class="tab-badge L">1</div></button>
+    </div>
+
+    <!-- 세대원 추가 바텀 시트 -->
+    <div class="sheet-overlay L" id="sheet-add-res">
+      <div class="sheet-panel L">
+        <div class="handle-wrap"><div class="handle L"></div></div>
+        <div class="sheet-hdr">
+          <div class="sheet-hdr-title">세대원 직접 추가</div>
+          <button class="sheet-close L" onclick="closeSheet('sheet-add-res')">✕</button>
+        </div>
+        <div class="sheet-body">
+          <div class="field">
+            <div class="field-label L">동·호수</div>
+            <input class="text-input L" type="text" placeholder="예) 101동 302호">
+          </div>
+          <div class="field">
+            <div class="field-label L">이름</div>
+            <input class="text-input L" type="text" placeholder="이름을 입력하세요">
+          </div>
+          <div class="field">
+            <div class="field-label L">연락처</div>
+            <input class="text-input L" type="tel" placeholder="010-0000-0000">
+          </div>
+          <div class="field">
+            <div class="field-label L">권한 설정</div>
+            <div class="role-select-row">
+              <button class="role-opt L">단지관리자</button>
+              <button class="role-opt L">주차관리인</button>
+              <button class="role-opt L on">입주민</button>
+            </div>
+          </div>
+        </div>
+        <div class="sheet-btns L">
+          <button class="s-btn s-btn-cancel L" onclick="closeSheet('sheet-add-res')">취소</button>
+          <button class="s-btn s-btn-confirm L" onclick="closeSheet('sheet-add-res')">추가하기</button>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- ════ 2. 주차구역 탭 — Dark ════ -->
+  <div class="pw"><div class="plabel">2. 주차구역 관리 (Dark)</div>
+  <div class="phone"><div class="ps D">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-left">
+        <div class="hdr-title">단지관리</div>
+        <div class="hdr-complex">🏢 현대아파트 · <span class="role-badge D">단지관리자</span></div>
+      </div>
+      <button class="hamburger-btn D"><div class="hb-line D"></div><div class="hb-line D"></div><div class="hb-line D"></div></button>
+    </div>
+    <div class="subtab-bar D">
+      <button class="stab D">👥 세대원 <span class="subtab-badge">3</span></button>
+      <button class="stab D on">🅿️ 주차구역</button>
+    </div>
+    <div class="scroll">
+      <div class="zone-summary D">
+        <div class="zone-sum-item"><div class="zone-sum-val" style="color:#4A90C8;">80</div><div class="zone-sum-lbl">전체 슬롯</div></div>
+        <div class="zone-sum-item"><div class="zone-sum-val" style="color:#2ECC71;">51</div><div class="zone-sum-lbl">사용 중</div></div>
+        <div class="zone-sum-item"><div class="zone-sum-val" style="color:#D8E8F5;">29</div><div class="zone-sum-lbl">여유</div></div>
+        <div class="zone-sum-item"><div class="zone-sum-val" style="color:#E74C3C;">3</div><div class="zone-sum-lbl">구역 수</div></div>
+      </div>
+      <div class="sec-hdr">
+        <div class="sec-title">구역 목록</div>
+      </div>
+      <div class="list-wrap">
+        <div class="zone-card D">
+          <div class="zone-top"><div class="zone-name">🌿 지상 주차장</div><button class="zone-edit-btn D">편집</button></div>
+          <div class="zone-stat"><div class="zone-used">18</div><div class="zone-total">/ 30 슬롯</div><div class="zone-status-chip zs-ok">여유</div></div>
+          <div class="zone-bar-wrap D"><div class="zone-bar zbar-ok" style="width:60%;"></div></div>
+        </div>
+        <div class="zone-card D">
+          <div class="zone-top"><div class="zone-name">🅱️ 지하 B1</div><button class="zone-edit-btn D">편집</button></div>
+          <div class="zone-stat"><div class="zone-used">22</div><div class="zone-total">/ 25 슬롯</div><div class="zone-status-chip zs-warn">혼잡</div></div>
+          <div class="zone-bar-wrap D"><div class="zone-bar zbar-warn" style="width:88%;"></div></div>
+        </div>
+        <div class="zone-card D">
+          <div class="zone-top"><div class="zone-name">🅱️ 지하 B2</div><button class="zone-edit-btn D">편집</button></div>
+          <div class="zone-stat"><div class="zone-used">25</div><div class="zone-total">/ 25 슬롯</div><div class="zone-status-chip zs-full">만차</div></div>
+          <div class="zone-bar-wrap D"><div class="zone-bar zbar-full" style="width:100%;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 구역 추가 FAB -->
+    <button class="fab D" onclick="openSheet('sheet-add-zone')">＋</button>
+
+    <div class="bnav">
+      <button class="nav-item D"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item D"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item D"><div class="nav-icon">🚗</div><span>차량관리</span><div class="tab-badge D">5</div></button>
+      <button class="nav-item on D"><div class="nav-icon">🏢</div><span>단지관리</span><div class="tab-badge D">3</div></button>
+      <button class="nav-item D"><div class="nav-icon">💬</div><span>소통</span><div class="tab-badge D">1</div></button>
+    </div>
+
+    <!-- 주차구역 추가 바텀 시트 -->
+    <div class="sheet-overlay D" id="sheet-add-zone">
+      <div class="sheet-panel D">
+        <div class="handle-wrap"><div class="handle D"></div></div>
+        <div class="sheet-hdr">
+          <div class="sheet-hdr-title">새 주차구역 추가</div>
+          <button class="sheet-close D" onclick="closeSheet('sheet-add-zone')">✕</button>
+        </div>
+        <div class="sheet-body">
+          <div class="field">
+            <div class="field-label D">구역 이름</div>
+            <input class="text-input D" type="text" placeholder="예) 지하 B3">
+          </div>
+          <div class="field">
+            <div class="field-label D">주차 가능 슬롯 수</div>
+            <div class="counter-row">
+              <button class="cnt-btn D">－</button>
+              <div class="cnt-val D">10</div>
+              <button class="cnt-btn D">＋</button>
+              <div class="cnt-lbl D">대</div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label D">메모 (선택)</div>
+            <input class="text-input D" type="text" placeholder="예) 전기차 충전소 2칸 포함">
+          </div>
+        </div>
+        <div class="sheet-btns D">
+          <button class="s-btn s-btn-cancel D" onclick="closeSheet('sheet-add-zone')">취소</button>
+          <button class="s-btn s-btn-confirm D" onclick="closeSheet('sheet-add-zone')">추가하기</button>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- ════ 3. 구역 편집 바텀 시트 (미리보기용) — Light ════ -->
+  <div class="pw"><div class="plabel">3. 구역 편집 바텀시트 (Light)</div>
+  <div class="phone"><div class="ps L">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-left"><div class="hdr-title">단지관리</div><div class="hdr-complex">🏢 현대아파트 · <span class="role-badge">단지관리자</span></div></div>
+      <button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button>
+    </div>
+    <div class="subtab-bar L">
+      <button class="stab L">👥 세대원 <span class="subtab-badge">3</span></button>
+      <button class="stab L on">🅿️ 주차구역</button>
+    </div>
+    <div class="scroll" style="filter:blur(1.5px);pointer-events:none;">
+      <div class="zone-summary L">
+        <div class="zone-sum-item"><div class="zone-sum-val" style="color:#1B3D6F;">80</div><div class="zone-sum-lbl">전체 슬롯</div></div>
+      </div>
+      <div class="list-wrap">
+        <div class="zone-card L">
+          <div class="zone-top"><div class="zone-name">🅱️ 지하 B1</div><button class="zone-edit-btn L">편집</button></div>
+          <div class="zone-stat"><div class="zone-used">22</div><div class="zone-total">/ 25 슬롯</div><div class="zone-status-chip zs-warn">혼잡</div></div>
+          <div class="zone-bar-wrap L"><div class="zone-bar zbar-warn" style="width:88%;"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bnav" style="filter:blur(1.5px);pointer-events:none;">
+      <button class="nav-item L"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item L"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item L"><div class="nav-icon">🚗</div><span>차량관리</span></button>
+      <button class="nav-item on L"><div class="nav-icon">🏢</div><span>단지관리</span></button>
+      <button class="nav-item L"><div class="nav-icon">💬</div><span>소통</span></button>
+    </div>
+    <!-- 바텀 시트 (열림 상태) -->
+    <div class="sheet-overlay open L">
+      <div class="sheet-panel L" style="transform:translateY(0);">
+        <div class="handle-wrap"><div class="handle L"></div></div>
+        <div class="sheet-hdr">
+          <div class="sheet-hdr-title">구역 편집</div>
+          <button class="sheet-close L">✕</button>
+        </div>
+        <div class="sheet-body">
+          <div class="field">
+            <div class="field-label L">구역 이름</div>
+            <input class="text-input L" type="text" value="지하 B1">
+          </div>
+          <div class="field">
+            <div class="field-label L">주차 가능 슬롯 수</div>
+            <div class="counter-row">
+              <button class="cnt-btn L">－</button>
+              <div class="cnt-val L">25</div>
+              <button class="cnt-btn L">＋</button>
+              <div class="cnt-lbl L">대</div>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label L">메모 (선택)</div>
+            <input class="text-input L" type="text" placeholder="예) 장애인 구역 2칸 포함">
+          </div>
+          <div class="divider L"></div>
+          <button class="s-btn s-btn-danger" style="width:100%;padding:11px 0;border-radius:12px;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;">🗑 이 구역 삭제</button>
+        </div>
+        <div class="sheet-btns L">
+          <button class="s-btn s-btn-cancel L">취소</button>
+          <button class="s-btn s-btn-confirm L">저장</button>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- ════ 4. 세대원 상세 바텀 시트 (미리보기용) — Dark ════ -->
+  <div class="pw"><div class="plabel">4. 세대원 상세 바텀시트 (Dark)</div>
+  <div class="phone"><div class="ps D">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-left"><div class="hdr-title">단지관리</div><div class="hdr-complex">🏢 현대아파트 · <span class="role-badge D">단지관리자</span></div></div>
+      <button class="hamburger-btn D"><div class="hb-line D"></div><div class="hb-line D"></div><div class="hb-line D"></div></button>
+    </div>
+    <div class="subtab-bar D">
+      <button class="stab D on">👥 세대원 <span class="subtab-badge">3</span></button>
+      <button class="stab D">🅿️ 주차구역</button>
+    </div>
+    <div class="scroll" style="filter:blur(1.5px);pointer-events:none;">
+      <div class="list-wrap">
+        <div class="item-card D">
+          <div class="avatar av-green">최</div>
+          <div class="item-info"><div class="item-name">최현우</div><div class="item-sub">101동 401호 · 차량 2대</div></div>
+          <div class="item-right"><div class="role-chip rc-manager">주차관리인</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="bnav" style="filter:blur(1.5px);pointer-events:none;">
+      <button class="nav-item D"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item D"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item D"><div class="nav-icon">🚗</div><span>차량관리</span></button>
+      <button class="nav-item on D"><div class="nav-icon">🏢</div><span>단지관리</span></button>
+      <button class="nav-item D"><div class="nav-icon">💬</div><span>소통</span></button>
+    </div>
+    <!-- 바텀 시트 (열림 상태) -->
+    <div class="sheet-overlay open D">
+      <div class="sheet-panel D" style="transform:translateY(0);">
+        <div class="handle-wrap"><div class="handle D"></div></div>
+        <div class="sheet-hdr">
+          <div class="sheet-hdr-title">세대원 상세</div>
+          <button class="sheet-close D">✕</button>
+        </div>
+        <div class="sheet-body">
+          <div class="profile-block">
+            <div class="profile-avatar">최</div>
+            <div><div class="profile-name">최현우</div><div class="profile-unit">101동 401호 · 입주민</div></div>
+            <button class="call-btn-lg">📞</button>
+          </div>
+          <div class="info-row">
+            <div class="info-chip D"><div class="ic-lbl D">가입일</div><div class="ic-val D">2025.03.12</div></div>
+            <div class="info-chip D"><div class="ic-lbl D">등록 차량</div><div class="ic-val D">2대</div></div>
+            <div class="info-chip D"><div class="ic-lbl D">연락처</div><div class="ic-val D">010-1234-****</div></div>
+          </div>
+          <div class="field">
+            <div class="field-label D">등록 차량</div>
+            <div class="car-row D"><div><div class="car-plate">12가 3456</div><div class="car-sub">현대 쏘나타 · 화이트</div></div></div>
+            <div class="car-row D"><div><div class="car-plate">98나 7654</div><div class="car-sub">기아 K5 · 블랙</div></div></div>
+          </div>
+          <div class="divider D"></div>
+          <div class="field">
+            <div class="field-label D">권한 변경</div>
+            <div class="role-select-row">
+              <button class="role-opt D">단지관리자</button>
+              <button class="role-opt D on">주차관리인</button>
+              <button class="role-opt D">입주민</button>
+            </div>
+          </div>
+          <div class="divider D"></div>
+          <button class="s-btn s-btn-danger" style="width:100%;padding:11px 0;border-radius:12px;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;">강제 탈퇴 처리</button>
+        </div>
+        <div class="sheet-btns D">
+          <button class="s-btn s-btn-cancel D">취소</button>
+          <button class="s-btn s-btn-confirm D">저장</button>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+</div>
+
+<script>
+  function openSheet(id) {
+    document.getElementById(id).classList.add('open');
+  }
+  function closeSheet(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+</script>
+</body>
+</html>

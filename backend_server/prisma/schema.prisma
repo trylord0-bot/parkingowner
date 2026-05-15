@@ -1,0 +1,379 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  APP_ADMIN       // 앱관리자 (개발자)
+  COMPLEX_MANAGER // 단지관리자
+  ATTENDANT       // 주차관리인
+  RESIDENT        // 세대원
+}
+
+enum VehicleType {
+  REGISTERED   // 등록 차량 (입주민)
+  VISITOR      // 방문 차량 (임시)
+}
+
+enum RequestType {
+  RESIDENT_JOIN   // 세대원 가입 요청
+  VEHICLE_REGISTER // 차량 등록 요청
+  VISITOR_REGISTER // 방문자 등록 요청
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum EntryDirection {
+  ENTRY // 입차
+  EXIT  // 출차
+}
+
+enum NotificationType {
+  UNREGISTERED_DETECTED    // 미등록 차량 감지
+  VISITOR_ENTRY            // 방문 차량 입차
+  VISITOR_EXPIRING         // 방문차량 만료 임박
+  VISITOR_EXPIRED          // 방문차량 만료
+  VEHICLE_REGISTERED       // 차량 등록 완료
+  RESIDENT_JOIN_REQUEST    // 세대원 등록 요청
+  VEHICLE_REGISTER_REQUEST // 차량 등록 요청
+  VISITOR_REGISTER_REQUEST // 방문자 등록 요청
+  REQUEST_APPROVED         // 요청 승인
+  REQUEST_REJECTED         // 요청 거절
+  INVITE_CODE_USED         // 초대코드 사용
+  DAILY_REPORT             // 일일 리포트
+  ILLEGAL_PARKING          // 무단주차 마킹
+}
+
+enum ChannelType {
+  ANNOUNCEMENT // 공지사항 (관리인 → 전체 세대원, 읽기 전용)
+  STAFF        // 업무 소통방 (관리소 ↔ 현장 근무자)
+  DIRECT       // 1:1 문의 (관리소 ↔ 개별 세대원)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  password           String?  // null for social-only accounts
+  name               String
+  phone              String?
+  fcmToken           String?  // FCM device token for push notifications
+  emailVerified      Boolean  @default(false)
+  emailVerifyToken   String?
+  passwordResetToken String?
+  passwordResetAt    DateTime?
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Social login
+  kakaoId   String? @unique
+  appleId   String? @unique
+  googleId  String? @unique
+
+  refreshTokens  RefreshToken[]
+  complexMembers ComplexMember[]
+  sentMessages   Message[]        @relation("SentMessages")
+  notifications  Notification[]
+  requests       Request[]        @relation("RequesterRequests")
+  approvedRequests Request[]      @relation("ApproverRequests")
+  ocrCorrections OcrCorrectionLog[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Complex (단지)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Complex {
+  id          String   @id @default(cuid())
+  name        String
+  address     String
+  latitude    Float?
+  longitude   Float?
+  totalSlots  Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members       ComplexMember[]
+  households    Household[]
+  vehicles      Vehicle[]
+  entryLogs     EntryLog[]
+  requests      Request[]
+  notifications Notification[]
+  parkingZones  ParkingZone[]
+  inviteCodes   InviteCode[]
+  channels      Channel[]
+
+  @@map("complexes")
+}
+
+model ComplexMember {
+  id        String    @id @default(cuid())
+  userId    String
+  complexId String
+  role      UserRole  @default(RESIDENT)
+  isActive  Boolean   @default(true)
+  joinedAt  DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  complex Complex @relation(fields: [complexId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, complexId])
+  @@map("complex_members")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Household (세대 — 동/호수)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Household {
+  id        String   @id @default(cuid())
+  complexId String
+  building  String?  // 동 (optional — some complexes have no building number)
+  unit      String   // 호수 (required)
+  createdAt DateTime @default(now())
+
+  complex  Complex   @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  vehicles Vehicle[]
+  requests Request[]
+
+  @@unique([complexId, building, unit])
+  @@map("households")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ParkingZone (주차 구역)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ParkingZone {
+  id          String   @id @default(cuid())
+  complexId   String
+  name        String   // e.g. "지상", "지하 B1", "지하 B2"
+  totalSlots  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  complex Complex @relation(fields: [complexId], references: [id], onDelete: Cascade)
+
+  @@map("parking_zones")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Vehicle (차량)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Vehicle {
+  id           String      @id @default(cuid())
+  complexId    String
+  householdId  String?
+  plateNumber  String      // Korean license plate e.g. "12가3456"
+  type         VehicleType
+  ownerName    String?
+  carModel     String?
+  memo         String?
+  isParked     Boolean     @default(false)
+  expiresAt    DateTime?   // for VISITOR type only
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  complex     Complex    @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  household   Household? @relation(fields: [householdId], references: [id], onDelete: SetNull)
+  entryLogs   EntryLog[]
+  requests    Request[]
+
+  @@unique([complexId, plateNumber])
+  @@map("vehicles")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EntryLog (입출차 기록)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EntryLog {
+  id          String         @id @default(cuid())
+  complexId   String
+  vehicleId   String
+  direction   EntryDirection
+  processedBy String?        // userId of attendant who processed
+  note        String?
+  createdAt   DateTime       @default(now())
+
+  complex Complex @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([complexId, createdAt(sort: Desc)])
+  @@map("entry_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Request (등록 요청)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Request {
+  id          String        @id @default(cuid())
+  complexId   String
+  requesterId String
+  approverId  String?
+  type        RequestType
+  status      RequestStatus @default(PENDING)
+
+  // Resident join request fields
+  householdId String?
+  relationship String?  // "가족", "동거인" etc.
+
+  // Vehicle register request fields
+  vehicleId   String?
+  plateNumber String?
+  carModel    String?
+  ownerName   String?
+
+  // Visitor register request fields
+  visitorName      String?
+  visitHouseholdId String?
+  visitStartAt     DateTime?
+  visitEndAt       DateTime?
+
+  rejectionReason String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  complex   Complex    @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  requester User       @relation("RequesterRequests", fields: [requesterId], references: [id], onDelete: Cascade)
+  approver  User?      @relation("ApproverRequests", fields: [approverId], references: [id], onDelete: SetNull)
+  household Household? @relation(fields: [householdId], references: [id], onDelete: SetNull)
+  vehicle   Vehicle?   @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+
+  @@index([complexId, status])
+  @@map("requests")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification (알림)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  complexId String?
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?            // extra payload
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  complex Complex? @relation(fields: [complexId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// InviteCode (초대코드)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model InviteCode {
+  id          String    @id @default(cuid())
+  complexId   String
+  code        String    @unique
+  issuedById  String
+  usedById    String?
+  usedAt      DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  complex Complex @relation(fields: [complexId], references: [id], onDelete: Cascade)
+
+  @@map("invite_codes")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Channel & Message (채팅)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Channel {
+  id          String      @id @default(cuid())
+  complexId   String
+  type        ChannelType
+  name        String?     // for ANNOUNCEMENT and STAFF channels
+  targetUserId String?    // for DIRECT channels: the resident's userId
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  complex  Complex   @relation(fields: [complexId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@map("channels")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  channelId String
+  senderId  String
+  content   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sender  User    @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([channelId, createdAt(sort: Desc)])
+  @@map("messages")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OcrCorrectionLog (OCR 수정 데이터 — ML 학습용)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model OcrCorrectionLog {
+  id                String   @id @default(cuid())
+  userId            String
+  complexId         String?
+  platform          String   // "android" | "ios"
+  deviceModel       String?
+  osVersion         String?
+  imageOriginalUrl  String?
+  imageCroppedUrl   String?
+  capturedAt        DateTime?
+  rawText           String
+  confidenceScore   Float?
+  modelVersion      String?
+  correctedText     String
+  createdAt         DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ocr_correction_logs")
+}

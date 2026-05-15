@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkingOwner — 스캔 탭 v8</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans','Noto Sans KR',sans-serif;background:#0a0f18;
+  display:flex;flex-direction:column;align-items:center;padding:32px 20px 80px;gap:12px;}
+h2{color:#D8E8F5;font-size:15px;font-weight:700;text-align:center;letter-spacing:.5px;margin-top:36px;}
+.note{color:#7890A8;font-size:11px;text-align:center;line-height:1.8;}
+.phones-row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start;}
+.pw{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.plabel{color:#9CA3AF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+
+.phone{width:320px;height:680px;background:#080808;border-radius:48px;padding:12px;
+  box-shadow:0 0 0 1px #1e1e1e,0 0 0 3px #080808,0 28px 70px rgba(0,0,0,.85),
+  inset 0 1px 0 rgba(255,255,255,.06);position:relative;flex-shrink:0;}
+.phone::before{content:'';position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  width:98px;height:28px;background:#000;border-radius:16px;z-index:10;}
+.ps{width:100%;height:100%;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;position:relative;}
+
+.L{background:#F0F4F9;}
+.D{background:#0C1520;}
+
+.sbar{height:44px;flex-shrink:0;display:flex;align-items:flex-end;
+  justify-content:space-between;padding:0 18px 6px;font-size:10px;font-weight:700;}
+.L .sbar{color:#162035;} .D .sbar{color:#D8E8F5;}
+.sbar-r{display:flex;gap:4px;align-items:center;}
+
+.hdr{flex-shrink:0;padding:8px 16px 12px;display:flex;align-items:center;justify-content:space-between;}
+.L .hdr{background:#1B3D6F;}
+.D .hdr{background:#142030;border-bottom:1px solid rgba(74,144,200,.12);}
+.hdr-title{color:#fff;font-size:16px;font-weight:700;}
+.D .hdr-title{color:#D8E8F5;}
+.hamburger-btn{width:36px;height:36px;border-radius:10px;border:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:rgba(255,255,255,.15);flex-shrink:0;padding:0;}
+.D .hamburger-btn{background:rgba(74,144,200,.12);}
+.hb-line{width:16px;height:2px;border-radius:1px;background:#fff;}
+.D .hb-line{background:#D8E8F5;}
+
+.cam-area{height:250px;background:#1a1a24;position:relative;display:flex;align-items:center;
+  justify-content:center;overflow:hidden;flex-shrink:0;}
+.cam-feed-placeholder{position:absolute;inset:0;
+  background:radial-gradient(circle at center,#2a2a35 0%,#111 100%);opacity:.8;}
+.scan-frame{width:220px;height:90px;position:relative;z-index:2;}
+.corner{position:absolute;width:24px;height:24px;border:4px solid;}
+.c-tl{top:0;left:0;border-right:none;border-bottom:none;}
+.c-tr{top:0;right:0;border-left:none;border-bottom:none;}
+.c-bl{bottom:0;left:0;border-right:none;border-top:none;}
+.c-br{bottom:0;right:0;border-left:none;border-top:none;}
+.theme-idle .corner{border-color:#9CA3AF;}
+.theme-reg  .corner{border-color:#4A90C8;}
+.theme-unr  .corner{border-color:#E74C3C;}
+.scan-line{position:absolute;left:0;right:0;height:2px;
+  box-shadow:0 0 8px 2px currentColor;animation:scanAnim 2.5s infinite ease-in-out;}
+.theme-idle .scan-line{background:#9CA3AF;color:#9CA3AF;}
+.theme-reg  .scan-line{background:#4A90C8;color:#4A90C8;}
+.theme-unr  .scan-line{background:#E74C3C;color:#E74C3C;}
+@keyframes scanAnim{0%{top:0;opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{top:100%;opacity:0;}}
+.cam-hint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.6);backdrop-filter:blur(4px);color:#fff;
+  padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;z-index:3;}
+.theme-unr .cam-hint{background:rgba(231,76,60,.85);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%{transform:translateX(-50%) scale(1);}50%{transform:translateX(-50%) scale(1.05);}100%{transform:translateX(-50%) scale(1);}}
+.cam-conf{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);
+  font-size:10px;color:rgba(255,255,255,.65);z-index:3;letter-spacing:.5px;}
+
+.scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:20px 16px 16px;gap:16px;}
+.scroll::-webkit-scrollbar{display:none;}
+
+.ocr-wrapper{position:relative;display:flex;justify-content:center;align-items:center;height:40px;}
+.ocr-plate{font-size:28px;font-weight:700;letter-spacing:1.5px;font-variant-numeric:tabular-nums;}
+.L .ocr-plate{color:#162035;} .D .ocr-plate{color:#D8E8F5;}
+.ocr-empty{font-size:20px;color:#9CA3AF;font-weight:400;letter-spacing:0;}
+.ocr-edit-btn{position:absolute;right:0;width:36px;height:36px;border-radius:10px;border:none;
+  background:transparent;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.L .ocr-edit-btn{background:rgba(27,61,111,.06);color:#607080;}
+.D .ocr-edit-btn{background:rgba(74,144,200,.1);color:#7890A8;}
+
+.action-row{display:flex;gap:8px;}
+.btn{flex:1;padding:14px 0;border:none;border-radius:12px;font-family:inherit;
+  font-size:13px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+.btn-primary{background:#1B3D6F;color:#fff;}
+.D .btn-primary{background:#4A90C8;}
+.btn-outline{background:transparent;border:1px solid #9CA3AF;color:#9CA3AF;}
+.btn-warn{background:#E74C3C;color:#fff;}
+
+.info-card{border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.L .info-card{background:#fff;box-shadow:0 2px 12px rgba(27,61,111,.06);}
+.D .info-card{background:#142030;}
+.info-hdr{display:flex;justify-content:space-between;align-items:center;}
+.info-badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700;}
+.bg-reg{background:rgba(46,204,113,.15);color:#27ae60;}
+.bg-unr{background:rgba(231,76,60,.15);color:#c0392b;}
+.bg-idle{background:rgba(156,163,175,.15);color:#9CA3AF;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.info-item{display:flex;flex-direction:column;gap:2px;}
+.info-lbl{font-size:10px;}
+.L .info-lbl{color:#9CA3AF;} .D .info-lbl{color:#607080;}
+.info-val{font-size:13px;font-weight:700;}
+.L .info-val{color:#162035;} .D .info-val{color:#D8E8F5;}
+.info-empty{color:#9CA3AF;font-weight:400;font-size:12px;}
+.contact-btn{width:32px;height:32px;border-radius:50%;border:none;
+  background:rgba(34,197,94,.15);color:#22C55E;
+  border:1px solid rgba(34,197,94,.3);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;}
+
+.sec-header{display:flex;align-items:center;justify-content:space-between;}
+.sec-title{font-size:12px;font-weight:700;}
+.L .sec-title{color:#162035;} .D .sec-title{color:#D8E8F5;}
+.sec-more{font-size:10px;font-weight:700;border:none;background:transparent;cursor:pointer;padding:0;}
+.L .sec-more{color:#1B3D6F;} .D .sec-more{color:#4A90C8;}
+
+.history-list{display:flex;flex-direction:column;}
+.hist-item{display:flex;gap:12px;position:relative;padding-bottom:14px;}
+.hist-item:last-child{padding-bottom:0;}
+.hist-line{position:absolute;left:4px;top:14px;bottom:0;width:1px;}
+.L .hist-line{background:rgba(27,61,111,.12);}
+.D .hist-line{background:rgba(74,144,200,.15);}
+.hist-item:last-child .hist-line{display:none;}
+.hist-dot{width:9px;height:9px;border-radius:50%;position:relative;z-index:2;margin-top:3px;flex-shrink:0;}
+.hist-info{flex:1;display:flex;flex-direction:column;gap:2px;}
+.hist-title-t{font-size:12px;font-weight:700;}
+.L .hist-title-t{color:#162035;} .D .hist-title-t{color:#D8E8F5;}
+.hist-time{font-size:10px;}
+.L .hist-time{color:#9CA3AF;} .D .hist-time{color:#607080;}
+
+/* ── 바텀 시트 ── */
+.sheet-overlay{position:absolute;inset:0;z-index:200;background:rgba(0,0,0,0);
+  transition:background .3s ease;display:flex;flex-direction:column;
+  justify-content:flex-end;border-radius:38px;overflow:hidden;}
+.sheet-overlay.open{background:rgba(0,0,0,.55);}
+.sheet-panel{border-radius:24px 24px 0 0;padding:0 0 8px;display:flex;flex-direction:column;
+  transform:translateY(100%);transition:transform .35s cubic-bezier(.32,1,.23,1);
+  max-height:88%;overflow:hidden;}
+.sheet-overlay.open .sheet-panel{transform:translateY(0);}
+.D .sheet-panel{background:#142030;border-top:1px solid rgba(74,144,200,.15);}
+.L .sheet-panel{background:#fff;}
+.sheet-handle-wrap{padding:12px 0 6px;display:flex;justify-content:center;cursor:grab;flex-shrink:0;}
+.sheet-handle{width:40px;height:4px;border-radius:2px;}
+.D .sheet-handle{background:rgba(255,255,255,.15);}
+.L .sheet-handle{background:rgba(0,0,0,.12);}
+.sheet-body{overflow-y:auto;padding:0 20px 16px;display:flex;flex-direction:column;gap:14px;}
+.sheet-body::-webkit-scrollbar{display:none;}
+.sheet-title{font-size:16px;font-weight:700;text-align:center;}
+.D .sheet-title{color:#D8E8F5;} .L .sheet-title{color:#162035;}
+.sheet-desc{font-size:12px;text-align:center;margin-top:-8px;}
+.D .sheet-desc{color:#7890A8;} .L .sheet-desc{color:#607080;}
+.action-list{display:flex;flex-direction:column;gap:8px;}
+.action-opt{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:10px;border:1px solid;cursor:pointer;}
+.D .action-opt{border-color:rgba(74,144,200,.15);background:#0C1520;}
+.L .action-opt{border-color:rgba(27,61,111,.1);background:#F0F4F9;}
+.D .action-opt.selected{border-color:#4A90C8;background:rgba(74,144,200,.1);}
+.L .action-opt.selected{border-color:#1B3D6F;background:rgba(27,61,111,.05);}
+.action-opt.locked{cursor:not-allowed;opacity:.6;}
+.check-box{width:18px;height:18px;border-radius:4px;border:2px solid #9CA3AF;
+  display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;flex-shrink:0;}
+.selected .check-box{border-color:#4A90C8;background:#4A90C8;color:#fff;}
+.selected .check-box::after{content:'✓';font-weight:bold;}
+.L .selected .check-box{border-color:#1B3D6F;background:#1B3D6F;}
+.opt-text{font-size:13px;font-weight:700;}
+.D .opt-text{color:#D8E8F5;} .L .opt-text{color:#162035;}
+.extra-input-wrap{display:flex;flex-direction:column;gap:6px;}
+.extra-input-label{font-size:11px;font-weight:700;}
+.D .extra-input-label{color:#607080;} .L .extra-input-label{color:#9CA3AF;}
+.extra-textarea{width:100%;border-radius:10px;border:1px solid;resize:none;
+  font-family:'DM Sans','Noto Sans KR',sans-serif;font-size:12px;padding:10px 12px;
+  line-height:1.5;outline:none;}
+.D .extra-textarea{border-color:rgba(74,144,200,.2);background:#0C1520;color:#D8E8F5;}
+.D .extra-textarea::placeholder{color:#3A5068;}
+.L .extra-textarea{border-color:rgba(27,61,111,.15);background:#F0F4F9;color:#162035;}
+.L .extra-textarea::placeholder{color:#C0CCD8;}
+.sheet-btns{display:flex;gap:8px;padding:0 20px 12px;flex-shrink:0;}
+.m-btn{flex:1;padding:13px 0;border-radius:12px;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;}
+.D .m-btn-cancel{background:rgba(74,144,200,.1);color:#7890A8;}
+.L .m-btn-cancel{background:rgba(27,61,111,.08);color:#607080;}
+.D .m-btn-confirm{background:#4A90C8;color:#fff;}
+.L .m-btn-confirm{background:#1B3D6F;color:#fff;}
+
+/* ── 자동 촬영 사진 ── */
+.photo-wrap{display:flex;flex-direction:column;gap:8px;}
+.photo-label{font-size:11px;font-weight:700;color:#607080;}
+.photo-thumb{position:relative;width:100%;border-radius:12px;overflow:hidden;
+  border:1px solid rgba(74,144,200,.2);}
+.photo-img{width:100%;height:120px;object-fit:cover;display:block;
+  background:linear-gradient(160deg,#1c2a3a 0%,#0e1a28 60%,#1a1f2a 100%);}
+.photo-img-inner{width:100%;height:120px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,#1c2a3a 0%,#0e1a28 55%,#1a1f2a 100%);position:relative;}
+.photo-car{font-size:48px;opacity:.35;filter:grayscale(1);}
+.photo-plate-overlay{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
+  background:rgba(255,255,255,.92);color:#162035;font-size:11px;font-weight:700;
+  padding:3px 10px;border-radius:6px;letter-spacing:1px;white-space:nowrap;}
+.photo-badge-auto{position:absolute;top:8px;left:8px;
+  background:rgba(231,76,60,.9);color:#fff;font-size:9px;font-weight:700;
+  padding:2px 7px;border-radius:6px;letter-spacing:.3px;}
+.photo-time-tag{position:absolute;bottom:8px;right:8px;
+  background:rgba(0,0,0,.65);color:#D8E8F5;font-size:9px;
+  padding:2px 7px;border-radius:6px;font-variant-numeric:tabular-nums;}
+
+.bnav{height:62px;flex-shrink:0;display:flex;align-items:center;
+  justify-content:space-around;padding:0 4px 6px;position:relative;z-index:100;}
+.L .bnav{background:#fff;border-top:1px solid rgba(27,61,111,.1);}
+.D .bnav{background:#142030;border-top:1px solid rgba(74,144,200,.1);}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+  padding:5px 8px;border-radius:10px;font-size:9px;font-weight:400;
+  border:none;background:transparent;font-family:inherit;position:relative;flex:1;}
+.nav-icon{font-size:18px;line-height:1;}
+.L .nav-item{color:#607080;} .L .nav-item.on{color:#1B3D6F;font-weight:700;}
+.D .nav-item{color:#7890A8;} .D .nav-item.on{color:#4A90C8;font-weight:700;}
+</style>
+</head>
+<body>
+
+<h2>📷 스캔 탭 v8</h2>
+<div class="note">
+  무단주차 처리 바텀 시트 하단에 자동 촬영 사진 항목 추가
+</div>
+
+<div class="phones-row">
+
+  <!-- ════ 1. 인식 전 ════ -->
+  <div class="pw"><div class="plabel">1. 인식 전 대기 상태</div>
+  <div class="phone"><div class="ps L theme-idle">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-title">스캔</div>
+      <button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button>
+    </div>
+    <div class="cam-area">
+      <div class="cam-feed-placeholder"></div>
+      <div class="scan-frame">
+        <div class="corner c-tl"></div><div class="corner c-tr"></div>
+        <div class="corner c-bl"></div><div class="corner c-br"></div>
+        <div class="scan-line"></div>
+      </div>
+      <div class="cam-hint" style="background:rgba(0,0,0,0.5);">차량 번호판을 카메라에 인식시키세요</div>
+      <div class="cam-conf">인식률 —</div>
+    </div>
+    <div class="scroll">
+      <div class="ocr-wrapper"><div class="ocr-plate ocr-empty">인식 대기 중...</div></div>
+      <div class="action-row"><button class="btn btn-outline" disabled>스캔 대기 중</button></div>
+      <div class="info-card">
+        <div class="info-hdr"><div class="info-badge bg-idle">대기 중</div></div>
+        <div class="info-empty" style="text-align:center;padding:10px 0;">차량을 스캔하면 정보가 표시됩니다.</div>
+      </div>
+    </div>
+    <div class="bnav">
+      <button class="nav-item L"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item on L"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item L"><div class="nav-icon">🚗</div><span>차량관리</span></button>
+      <button class="nav-item L"><div class="nav-icon">🏢</div><span>단지관리</span></button>
+      <button class="nav-item L"><div class="nav-icon">💬</div><span>소통</span></button>
+    </div>
+  </div></div></div>
+
+  <!-- ════ 2. 정상 등록 차량 ════ -->
+  <div class="pw"><div class="plabel">2. 정상 등록 차량 스캔</div>
+  <div class="phone"><div class="ps L theme-reg">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-title">스캔</div>
+      <button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button>
+    </div>
+    <div class="cam-area">
+      <div class="cam-feed-placeholder"></div>
+      <div class="scan-frame">
+        <div class="corner c-tl"></div><div class="corner c-tr"></div>
+        <div class="corner c-bl"></div><div class="corner c-br"></div>
+        <div class="scan-line"></div>
+      </div>
+      <div class="cam-hint">정상 등록 차량</div>
+      <div class="cam-conf">인식률 98%</div>
+    </div>
+    <div class="scroll">
+      <div class="ocr-wrapper">
+        <div class="ocr-plate">12가 3456</div>
+        <button class="ocr-edit-btn">✏️</button>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" disabled>✓ 입주민 차량</button>
+      </div>
+      <div class="info-card">
+        <div class="info-hdr">
+          <div class="info-badge bg-reg">등록 차량</div>
+          <button class="contact-btn">📞</button>
+        </div>
+        <div class="info-grid">
+          <div class="info-item"><span class="info-lbl">동·호수</span><span class="info-val">101동 302호</span></div>
+          <div class="info-item"><span class="info-lbl">등록일</span><span class="info-val">2025.01.15</span></div>
+          <div class="info-item"><span class="info-lbl">차종</span><span class="info-val">현대 쏘나타</span></div>
+          <div class="info-item"><span class="info-lbl">색상</span><span class="info-val">화이트</span></div>
+        </div>
+      </div>
+      <div class="sec-header">
+        <div class="sec-title">과거 이력</div>
+        <button class="sec-more">더보기</button>
+      </div>
+      <div class="history-list">
+        <div class="hist-item">
+          <div class="hist-dot" style="background:#4A90C8;"></div>
+          <div class="hist-line L"></div>
+          <div class="hist-info">
+            <div class="hist-title-t">입차</div>
+            <div class="hist-time">2026.05.13 · 오전 8:24</div>
+          </div>
+        </div>
+        <div class="hist-item">
+          <div class="hist-dot" style="background:#607080;"></div>
+          <div class="hist-line L"></div>
+          <div class="hist-info">
+            <div class="hist-title-t">출차</div>
+            <div class="hist-time">2026.05.12 · 오후 7:51</div>
+          </div>
+        </div>
+        <div class="hist-item">
+          <div class="hist-dot" style="background:#4A90C8;"></div>
+          <div class="hist-line L"></div>
+          <div class="hist-info">
+            <div class="hist-title-t">입차</div>
+            <div class="hist-time">2026.05.12 · 오전 9:03</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bnav">
+      <button class="nav-item L"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item on L"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item L"><div class="nav-icon">🚗</div><span>차량관리</span></button>
+      <button class="nav-item L"><div class="nav-icon">🏢</div><span>단지관리</span></button>
+      <button class="nav-item L"><div class="nav-icon">💬</div><span>소통</span></button>
+    </div>
+  </div></div></div>
+
+  <!-- ════ 3. 미등록 차량 ════ -->
+  <div class="pw"><div class="plabel">3. 미등록 차량 스캔</div>
+  <div class="phone"><div class="ps D theme-unr">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-title">스캔</div>
+      <button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button>
+    </div>
+    <div class="cam-area">
+      <div class="cam-feed-placeholder"></div>
+      <div class="scan-frame">
+        <div class="corner c-tl"></div><div class="corner c-tr"></div>
+        <div class="corner c-bl"></div><div class="corner c-br"></div>
+        <div class="scan-line"></div>
+      </div>
+      <div class="cam-hint">미등록 차량</div>
+      <div class="cam-conf">인식률 92%</div>
+    </div>
+    <div class="scroll">
+      <div class="ocr-wrapper">
+        <div class="ocr-plate" style="color:#E74C3C;">55다 1234</div>
+        <button class="ocr-edit-btn">✏️</button>
+      </div>
+      <div class="action-row">
+        <button class="btn" style="background:transparent;border:1px solid #607080;color:#D8E8F5;">방문 등록</button>
+        <button class="btn btn-warn">무단주차 처리</button>
+      </div>
+      <div class="info-card">
+        <div class="info-hdr"><div class="info-badge bg-unr">미등록 차량</div></div>
+        <div style="font-size:12px;color:#7890A8;text-align:center;padding:10px 0;">단지에 등록된 정보가 없는 차량입니다.</div>
+      </div>
+      <div class="sec-header">
+        <div class="sec-title">과거 이력</div>
+        <button class="sec-more">더보기</button>
+      </div>
+      <div class="history-list">
+        <div class="hist-item">
+          <div class="hist-dot" style="background:#E74C3C;"></div>
+          <div class="hist-line"></div>
+          <div class="hist-info">
+            <div class="hist-title-t" style="color:#E74C3C;">무단주차 경고장 부착</div>
+            <div class="hist-time">2026.04.20 · B2 구역</div>
+          </div>
+        </div>
+        <div class="hist-item">
+          <div class="hist-dot" style="background:#E74C3C;"></div>
+          <div class="hist-line"></div>
+          <div class="hist-info">
+            <div class="hist-title-t" style="color:#E74C3C;">미등록 감지</div>
+            <div class="hist-time">2026.04.15 · 오후 2:10</div>
+          </div>
+        </div>
+        <div class="hist-item">
+          <div class="hist-dot" style="background:#F1C40F;"></div>
+          <div class="hist-line"></div>
+          <div class="hist-info">
+            <div class="hist-title-t" style="color:#F1C40F;">방문 차량 입차 (만료)</div>
+            <div class="hist-time">2026.03.30 · 101동 302호</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bnav">
+      <button class="nav-item D"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item on D"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item D"><div class="nav-icon">🚗</div><span>차량관리</span></button>
+      <button class="nav-item D"><div class="nav-icon">🏢</div><span>단지관리</span></button>
+      <button class="nav-item D"><div class="nav-icon">💬</div><span>소통</span></button>
+    </div>
+  </div></div></div>
+
+  <!-- ════ 4. 무단주차 처리 바텀 시트 ════ -->
+  <div class="pw"><div class="plabel">4. 무단주차 처리 바텀 시트</div>
+  <div class="phone"><div class="ps D theme-unr" id="phone4">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-title">스캔</div>
+      <button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button>
+    </div>
+    <div class="cam-area">
+      <div class="cam-feed-placeholder"></div>
+      <div class="scan-frame">
+        <div class="corner c-tl"></div><div class="corner c-tr"></div>
+        <div class="corner c-bl"></div><div class="corner c-br"></div>
+        <div class="scan-line"></div>
+      </div>
+      <div class="cam-hint">미등록 차량</div>
+      <div class="cam-conf">인식률 92%</div>
+    </div>
+    <div class="scroll" style="filter:blur(1.5px);pointer-events:none;">
+      <div class="ocr-wrapper">
+        <div class="ocr-plate" style="color:#E74C3C;">55다 1234</div>
+      </div>
+      <div class="action-row">
+        <button class="btn" style="background:transparent;border:1px solid #607080;color:#D8E8F5;">방문 등록</button>
+        <button class="btn btn-warn">무단주차 처리</button>
+      </div>
+      <div class="info-card">
+        <div class="info-hdr"><div class="info-badge bg-unr">미등록 차량</div></div>
+        <div style="font-size:12px;color:#7890A8;text-align:center;padding:10px 0;">단지에 등록된 정보가 없는 차량입니다.</div>
+      </div>
+      <div class="sec-header">
+        <div class="sec-title">과거 이력</div>
+        <button class="sec-more">더보기</button>
+      </div>
+    </div>
+    <div class="bnav" style="filter:blur(1.5px);pointer-events:none;">
+      <button class="nav-item D"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item on D"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item D"><div class="nav-icon">🚗</div><span>차량관리</span></button>
+      <button class="nav-item D"><div class="nav-icon">🏢</div><span>단지관리</span></button>
+      <button class="nav-item D"><div class="nav-icon">💬</div><span>소통</span></button>
+    </div>
+    <!-- 바텀 시트 -->
+    <div class="sheet-overlay open D" id="sheet-unr" onclick="handleOverlayClick(event,'sheet-unr')">
+      <div class="sheet-panel D" id="panel-unr"
+        onmousedown="startDrag(event,'panel-unr','sheet-unr')"
+        ontouchstart="startDragTouch(event,'panel-unr','sheet-unr')">
+        <div class="sheet-handle-wrap">
+          <div class="sheet-handle"></div>
+        </div>
+        <div class="sheet-body">
+          <div class="sheet-title">무단주차 조치 기록</div>
+          <div class="sheet-desc">처리하신 방법을 선택해 주세요. (다중 선택 가능)</div>
+          <div class="action-list">
+            <div class="action-opt selected locked D">
+              <div class="check-box"></div>
+              <div class="opt-text">조치 기록 (필수)</div>
+            </div>
+            <div class="action-opt selected D" onclick="toggleOpt(this)">
+              <div class="check-box"></div>
+              <div class="opt-text">경고 스티커 발부</div>
+            </div>
+            <div class="action-opt D" onclick="toggleOpt(this)">
+              <div class="check-box"></div>
+              <div class="opt-text">전화로 이동주차 통보</div>
+            </div>
+            <div class="action-opt D" onclick="toggleOpt(this)">
+              <div class="check-box"></div>
+              <div class="opt-text">방송으로 이동주차 통보</div>
+            </div>
+            <div class="action-opt D" onclick="toggleOpt(this)">
+              <div class="check-box"></div>
+              <div class="opt-text">반복 위반 강력 경고</div>
+            </div>
+          </div>
+          <div class="extra-input-wrap">
+            <div class="extra-input-label">추가사항 (선택)</div>
+            <textarea class="extra-textarea D" rows="3" placeholder="현장 상황이나 특이사항을 입력하세요..."></textarea>
+          </div>
+          <!-- ✅ 자동 촬영 사진 -->
+          <div class="photo-wrap">
+            <div class="photo-label">📸 자동 촬영 사진</div>
+            <div class="photo-thumb">
+              <div class="photo-img-inner">
+                <!-- 차량 실루엣 SVG -->
+                <svg width="110" height="60" viewBox="0 0 110 60" fill="none" xmlns="http://www.w3.org/2000/svg" style="opacity:.4;">
+                  <rect x="10" y="22" width="90" height="26" rx="6" fill="#7890A8"/>
+                  <path d="M22 22 C26 10 34 8 55 8 C76 8 84 10 88 22Z" fill="#607080"/>
+                  <circle cx="26" cy="50" r="8" fill="#3A5068"/><circle cx="26" cy="50" r="4" fill="#1a2535"/>
+                  <circle cx="84" cy="50" r="8" fill="#3A5068"/><circle cx="84" cy="50" r="4" fill="#1a2535"/>
+                  <rect x="30" y="12" width="22" height="12" rx="2" fill="#4A6080" opacity=".6"/>
+                  <rect x="58" y="12" width="22" height="12" rx="2" fill="#4A6080" opacity=".6"/>
+                  <rect x="8" y="28" width="10" height="6" rx="2" fill="#F1C40F" opacity=".7"/>
+                  <rect x="92" y="28" width="10" height="6" rx="2" fill="#E74C3C" opacity=".7"/>
+                </svg>
+                <!-- 번호판 -->
+                <div class="photo-plate-overlay">55다 1234</div>
+              </div>
+              <!-- AUTO 뱃지 -->
+              <div class="photo-badge-auto">AUTO</div>
+              <!-- 촬영 시각 -->
+              <div class="photo-time-tag">2026.05.14 · 09:12</div>
+            </div>
+          </div>
+        </div>
+        <div class="sheet-btns">
+          <button class="m-btn m-btn-cancel D" onclick="closeSheet('sheet-unr')">취소</button>
+          <button class="m-btn m-btn-confirm D">처리완료</button>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+</div>
+
+<script>
+function toggleOpt(el){
+  if(el.classList.contains('locked')) return;
+  el.classList.toggle('selected');
+}
+function openSheet(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.style.display='flex';
+  requestAnimationFrame(()=>el.classList.add('open'));
+}
+function closeSheet(id){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.classList.remove('open');
+}
+function handleOverlayClick(e,id){
+  if(e.target===document.getElementById(id)) closeSheet(id);
+}
+let dragState=null;
+function startDrag(e,panelId,sheetId){
+  const panel=document.getElementById(panelId);
+  dragState={startY:e.clientY,panel,sheetId};
+  document.addEventListener('mousemove',onDragMove);
+  document.addEventListener('mouseup',onDragEnd);
+  e.stopPropagation();
+}
+function onDragMove(e){
+  if(!dragState) return;
+  const dy=e.clientY-dragState.startY;
+  if(dy>0){dragState.panel.style.transition='none';dragState.panel.style.transform=`translateY(${dy}px)`;}
+}
+function onDragEnd(e){
+  if(!dragState) return;
+  const dy=e.clientY-dragState.startY;
+  dragState.panel.style.transition='';
+  if(dy>80) closeSheet(dragState.sheetId);
+  dragState.panel.style.transform='';
+  document.removeEventListener('mousemove',onDragMove);
+  document.removeEventListener('mouseup',onDragEnd);
+  dragState=null;
+}
+let touchState=null;
+function startDragTouch(e,panelId,sheetId){
+  const panel=document.getElementById(panelId);
+  touchState={startY:e.touches[0].clientY,panel,sheetId};
+  document.addEventListener('touchmove',onTouchMove,{passive:false});
+  document.addEventListener('touchend',onTouchEnd);
+  e.stopPropagation();
+}
+function onTouchMove(e){
+  if(!touchState) return;
+  const dy=e.touches[0].clientY-touchState.startY;
+  if(dy>0){e.preventDefault();touchState.panel.style.transition='none';touchState.panel.style.transform=`translateY(${dy}px)`;}
+}
+function onTouchEnd(e){
+  if(!touchState) return;
+  const dy=e.changedTouches[0].clientY-touchState.startY;
+  touchState.panel.style.transition='';
+  if(dy>80) closeSheet(touchState.sheetId);
+  touchState.panel.style.transform='';
+  document.removeEventListener('touchmove',onTouchMove);
+  document.removeEventListener('touchend',onTouchEnd);
+  touchState=null;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Docker data volumes
+mysql_data/
+minio_data/
+
+# Secrets
+firebase-service-account.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Uploads
+uploads/
+
+# OS
+.DS_Store
+Thumbs.db

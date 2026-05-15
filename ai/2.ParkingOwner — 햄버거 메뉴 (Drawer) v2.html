@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkingOwner — 햄버거 메뉴 v2</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans','Noto Sans KR',sans-serif;background:#0a0f18;
+  display:flex;flex-direction:column;align-items:center;padding:32px 20px 80px;gap:12px;}
+h2{color:#D8E8F5;font-size:15px;font-weight:700;text-align:center;letter-spacing:.5px;margin-top:36px;}
+.note{color:#7890A8;font-size:11px;text-align:center;line-height:1.8;}
+.phones-row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start;}
+.pw{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.plabel{color:#9CA3AF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;}
+
+.phone{width:320px;height:680px;background:#080808;border-radius:48px;padding:12px;
+  box-shadow:0 0 0 1px #1e1e1e,0 0 0 3px #080808,0 28px 70px rgba(0,0,0,.85),
+  inset 0 1px 0 rgba(255,255,255,.06);position:relative;flex-shrink:0;}
+.phone::before{content:'';position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  width:98px;height:28px;background:#000;border-radius:16px;z-index:10;}
+.ps{width:100%;height:100%;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;position:relative;}
+.L{background:#F0F4F9;} .D{background:#0C1520;}
+
+/* 상태바 & 헤더 (배경용) */
+.sbar{height:44px;flex-shrink:0;display:flex;align-items:flex-end;
+  justify-content:space-between;padding:0 18px 6px;font-size:10px;font-weight:700;}
+.L .sbar{color:#162035;} .D .sbar{color:#D8E8F5;}
+.sbar-r{display:flex;gap:4px;align-items:center;}
+.hdr{flex-shrink:0;padding:8px 16px 12px;display:flex;align-items:center;justify-content:space-between;}
+.L .hdr{background:#1B3D6F;} .D .hdr{background:#142030;border-bottom:1px solid rgba(74,144,200,.12);}
+.hdr-left{display:flex;flex-direction:column;gap:2px;}
+.hdr-title{color:#fff;font-size:15px;font-weight:700;} .D .hdr-title{color:#D8E8F5;}
+.hdr-complex{color:rgba(255,255,255,.65);font-size:11px;display:flex;align-items:center;gap:4px;}
+.D .hdr-complex{color:#7890A8;}
+.role-badge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:700;
+  background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25);}
+.D .role-badge{background:rgba(74,144,200,.15);color:#4A90C8;border-color:rgba(74,144,200,.3);}
+.hamburger-btn{width:36px;height:36px;border-radius:10px;border:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:rgba(255,255,255,.15);flex-shrink:0;padding:0;}
+.D .hamburger-btn{background:rgba(74,144,200,.12);}
+.hb-line{width:16px;height:2px;border-radius:1px;background:#fff;} .D .hb-line{background:#D8E8F5;}
+
+/* 배경 스크롤 영역 (블러 처리용) */
+.scroll{flex:1;overflow-y:auto;padding:14px 14px;display:flex;flex-direction:column;gap:12px;}
+.bg-card{border-radius:16px;height:120px;opacity:0.6;}
+.L .bg-card{background:#fff;box-shadow:0 2px 10px rgba(0,0,0,0.05);}
+.D .bg-card{background:#142030;}
+
+/* 탭바 (배경용) */
+.bnav{height:62px;flex-shrink:0;display:flex;align-items:center;justify-content:space-around;padding:0 4px 6px;}
+.L .bnav{background:#fff;border-top:1px solid rgba(27,61,111,.1);}
+.D .bnav{background:#142030;border-top:1px solid rgba(74,144,200,.1);}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:5px 8px;border-radius:10px;font-size:9px;font-weight:400;}
+.nav-icon{font-size:18px;line-height:1;}
+.L .nav-item{color:#607080;} .L .nav-item.on{color:#1B3D6F;font-weight:700;}
+.D .nav-item{color:#7890A8;} .D .nav-item.on{color:#4A90C8;font-weight:700;}
+
+/* ════ 드로어 (Drawer) ════ */
+.drawer-overlay{position:absolute;inset:0;background:rgba(0,0,0,0);z-index:300;
+  pointer-events:none;transition:background 0.3s ease;}
+.drawer-overlay.open{background:rgba(0,0,0,0.6);pointer-events:auto;}
+
+.drawer-panel{position:absolute;top:0;right:0;bottom:0;width:250px;
+  transform:translateX(100%);transition:transform 0.35s cubic-bezier(0.32,1,0.23,1);
+  display:flex;flex-direction:column;box-shadow:-4px 0 24px rgba(0,0,0,0.15);}
+.drawer-overlay.open .drawer-panel{transform:translateX(0);}
+.L .drawer-panel{background:#fff;}
+.D .drawer-panel{background:#142030;border-left:1px solid rgba(74,144,200,.15);}
+
+/* 드로어 헤더 (프로필) */
+.drawer-hdr{padding:54px 20px 24px;display:flex;flex-direction:column;gap:12px;}
+.L .drawer-hdr{background:#F0F4F9;border-bottom:1px solid rgba(27,61,111,.08);}
+.D .drawer-hdr{background:#0C1520;border-bottom:1px solid rgba(74,144,200,.1);}
+
+.drawer-close{position:absolute;top:48px;right:16px;width:32px;height:32px;border-radius:50%;
+  border:none;background:transparent;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.L .drawer-close{color:#607080;} .D .drawer-close{color:#7890A8;}
+
+.profile-avatar{width:52px;height:52px;border-radius:18px;display:flex;align-items:center;
+  justify-content:center;font-size:24px;font-weight:700;flex-shrink:0;}
+.L .profile-avatar{background:#1B3D6F;color:#fff;}
+.D .profile-avatar{background:rgba(74,144,200,.15);color:#4A90C8;}
+
+.profile-info{display:flex;flex-direction:column;gap:4px;}
+.profile-name{font-size:18px;font-weight:700;}
+.L .profile-name{color:#162035;} .D .profile-name{color:#D8E8F5;}
+.profile-complex{font-size:11px;display:flex;align-items:center;gap:6px;}
+.L .profile-complex{color:#607080;} .D .profile-complex{color:#7890A8;}
+
+.d-role-badge{font-size:9px;padding:2px 6px;border-radius:6px;font-weight:700;}
+.L .d-role-badge{background:rgba(27,61,111,.1);color:#1B3D6F;}
+.D .d-role-badge{background:rgba(74,144,200,.15);color:#4A90C8;}
+
+/* 드로어 메뉴 리스트 */
+.drawer-body{flex:1;overflow-y:auto;padding:16px 12px;display:flex;flex-direction:column;gap:20px;}
+.drawer-body::-webkit-scrollbar{display:none;}
+
+.menu-group{display:flex;flex-direction:column;gap:4px;}
+.menu-title{font-size:11px;font-weight:700;padding:0 12px 8px;letter-spacing:0.5px;}
+.L .menu-title{color:#9CA3AF;} .D .menu-title{color:#607080;}
+
+.menu-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;
+  cursor:pointer;transition:background 0.2s;}
+.L .menu-item:active{background:rgba(27,61,111,.05);}
+.D .menu-item:active{background:rgba(74,144,200,.08);}
+
+.menu-icon{font-size:18px;width:24px;text-align:center;}
+.menu-text{font-size:14px;font-weight:700;flex:1;}
+.L .menu-text{color:#162035;} .D .menu-text{color:#D8E8F5;}
+.menu-arrow{font-size:14px;}
+.L .menu-arrow{color:#C8D6E5;} .D .menu-arrow{color:#3A5068;}
+
+/* 드로어 푸터 */
+.drawer-footer{padding:16px 24px 32px;display:flex;align-items:center;justify-content:space-between;}
+.L .drawer-footer{border-top:1px solid rgba(27,61,111,.08);}
+.D .drawer-footer{border-top:1px solid rgba(74,144,200,.1);}
+
+.logout-btn{display:flex;align-items:center;gap:6px;background:none;border:none;
+  font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:0;}
+.L .logout-btn{color:#607080;} .D .logout-btn{color:#7890A8;}
+
+.app-version{font-size:10px;}
+.L .app-version{color:#9CA3AF;} .D .app-version{color:#607080;}
+
+</style>
+</head>
+<body>
+
+<h2>≡ 햄버거 메뉴 (Drawer) v2</h2>
+<div class="note">
+  우측 상단의 햄버거 버튼을 클릭했을 때 나타나는 전체 메뉴 화면입니다.<br>
+  배경 화면은 블러/딤(Dim) 처리되며, 우측에서 패널이 슬라이드 인 됩니다.
+</div>
+
+<div class="phones-row">
+
+  <!-- ════ 1. 햄버거 메뉴 — Light ════ -->
+  <div class="pw"><div class="plabel">1. 햄버거 메뉴 (Light)</div>
+  <div class="phone"><div class="ps L">
+    <!-- 배경 화면 (홈 대시보드 모방) -->
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-left"><div class="hdr-title">홈</div><div class="hdr-complex">🏢 현대아파트</div></div>
+      <button class="hamburger-btn" onclick="openDrawer('drawer-light')"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button>
+    </div>
+    <div class="scroll" style="filter:blur(2px); pointer-events:none;">
+      <div class="bg-card L"></div>
+      <div class="bg-card L"></div>
+      <div class="bg-card L"></div>
+    </div>
+    <div class="bnav" style="filter:blur(2px); pointer-events:none;">
+      <div class="nav-item on L"><div class="nav-icon">🏠</div><span>홈</span></div>
+      <div class="nav-item L"><div class="nav-icon">📷</div><span>스캔</span></div>
+      <div class="nav-item L"><div class="nav-icon">🚗</div><span>차량관리</span></div>
+      <div class="nav-item L"><div class="nav-icon">🏢</div><span>단지관리</span></div>
+      <div class="nav-item L"><div class="nav-icon">💬</div><span>소통</span></div>
+    </div>
+
+    <!-- Drawer Overlay (Light) -->
+    <div class="drawer-overlay open" id="drawer-light" onclick="closeDrawer('drawer-light')">
+      <div class="drawer-panel L" onclick="event.stopPropagation()">
+        <button class="drawer-close L" onclick="closeDrawer('drawer-light')">✕</button>
+        
+        <!-- 프로필 헤더 -->
+        <div class="drawer-hdr L">
+          <div class="profile-avatar L">최</div>
+          <div class="profile-info">
+            <div class="profile-name L">최현우 님</div>
+            <div class="profile-complex L">🏢 현대아파트 <span class="d-role-badge L">단지관리자</span></div>
+          </div>
+        </div>
+
+        <!-- 메뉴 리스트 -->
+        <div class="drawer-body">
+          <div class="menu-group">
+            <div class="menu-title L">정보</div>
+            <div class="menu-item L">
+              <div class="menu-icon">🏢</div><div class="menu-text L">단지 정보</div><div class="menu-arrow L">›</div>
+            </div>
+            <div class="menu-item L">
+              <div class="menu-icon">📊</div><div class="menu-text L">리포트 (통계)</div><div class="menu-arrow L">›</div>
+            </div>
+          </div>
+
+          <div class="menu-group">
+            <div class="menu-title L">앱</div>
+            <div class="menu-item L">
+              <div class="menu-icon">⚙️</div><div class="menu-text L">설정</div><div class="menu-arrow L">›</div>
+            </div>
+            <div class="menu-item L">
+              <div class="menu-icon">📖</div><div class="menu-text L">이용 가이드</div><div class="menu-arrow L">›</div>
+            </div>
+            <div class="menu-item L">
+              <div class="menu-icon">💬</div><div class="menu-text L">고객센터</div><div class="menu-arrow L">›</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="drawer-footer L">
+          <button class="logout-btn L">🚪 로그아웃</button>
+          <div class="app-version L">v1.0.0</div>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- ════ 2. 햄버거 메뉴 — Dark ════ -->
+  <div class="pw"><div class="plabel">2. 햄버거 메뉴 (Dark)</div>
+  <div class="phone"><div class="ps D">
+    <!-- 배경 화면 (홈 대시보드 모방) -->
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-left"><div class="hdr-title">홈</div><div class="hdr-complex">🏢 현대아파트</div></div>
+      <button class="hamburger-btn D" onclick="openDrawer('drawer-dark')"><div class="hb-line D"></div><div class="hb-line D"></div><div class="hb-line D"></div></button>
+    </div>
+    <div class="scroll" style="filter:blur(2px); pointer-events:none;">
+      <div class="bg-card D"></div>
+      <div class="bg-card D"></div>
+      <div class="bg-card D"></div>
+    </div>
+    <div class="bnav" style="filter:blur(2px); pointer-events:none;">
+      <div class="nav-item on D"><div class="nav-icon">🏠</div><span>홈</span></div>
+      <div class="nav-item D"><div class="nav-icon">📷</div><span>스캔</span></div>
+      <div class="nav-item D"><div class="nav-icon">🚗</div><span>차량관리</span></div>
+      <div class="nav-item D"><div class="nav-icon">🏢</div><span>단지관리</span></div>
+      <div class="nav-item D"><div class="nav-icon">💬</div><span>소통</span></div>
+    </div>
+
+    <!-- Drawer Overlay (Dark) -->
+    <div class="drawer-overlay open" id="drawer-dark" onclick="closeDrawer('drawer-dark')">
+      <div class="drawer-panel D" onclick="event.stopPropagation()">
+        <button class="drawer-close D" onclick="closeDrawer('drawer-dark')">✕</button>
+        
+        <!-- 프로필 헤더 -->
+        <div class="drawer-hdr D">
+          <div class="profile-avatar D">최</div>
+          <div class="profile-info">
+            <div class="profile-name D">최현우 님</div>
+            <div class="profile-complex D">🏢 현대아파트 <span class="d-role-badge D">단지관리자</span></div>
+          </div>
+        </div>
+
+        <!-- 메뉴 리스트 -->
+        <div class="drawer-body">
+          <div class="menu-group">
+            <div class="menu-title D">정보</div>
+            <div class="menu-item D">
+              <div class="menu-icon">🏢</div><div class="menu-text D">단지 정보</div><div class="menu-arrow D">›</div>
+            </div>
+            <div class="menu-item D">
+              <div class="menu-icon">📊</div><div class="menu-text D">리포트 (통계)</div><div class="menu-arrow D">›</div>
+            </div>
+          </div>
+
+          <div class="menu-group">
+            <div class="menu-title D">앱</div>
+            <div class="menu-item D">
+              <div class="menu-icon">⚙️</div><div class="menu-text D">설정</div><div class="menu-arrow D">›</div>
+            </div>
+            <div class="menu-item D">
+              <div class="menu-icon">📖</div><div class="menu-text D">이용 가이드</div><div class="menu-arrow D">›</div>
+            </div>
+            <div class="menu-item D">
+              <div class="menu-icon">💬</div><div class="menu-text D">고객센터</div><div class="menu-arrow D">›</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="drawer-footer D">
+          <button class="logout-btn D">🚪 로그아웃</button>
+          <div class="app-version D">v1.0.0</div>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+</div>
+
+<script>
+  function openDrawer(id) {
+    document.getElementById(id).classList.add('open');
+  }
+  function closeDrawer(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+</script>
+</body>
+</html>

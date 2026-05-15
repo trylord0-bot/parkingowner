@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkingOwner — 차량관리 탭 v4</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans','Noto Sans KR',sans-serif;background:#0a0f18;display:flex;flex-direction:column;align-items:center;padding:32px 20px 80px;gap:12px;}
+h2{color:#D8E8F5;font-size:15px;font-weight:700;text-align:center;margin-top:36px;}
+.note{color:#7890A8;font-size:11px;text-align:center;line-height:1.8;}
+.phones-row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start;}
+.pw{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.plabel{color:#9CA3AF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-align:center;}
+.phone{width:320px;height:680px;border-radius:48px;padding:12px;position:relative;flex-shrink:0;overflow:hidden;}
+.phone.dk{background:#080808;box-shadow:0 0 0 1px #1e1e1e,0 0 0 3px #080808,0 28px 70px rgba(0,0,0,.85),inset 0 1px 0 rgba(255,255,255,.06);}
+.phone.lt{background:#e8e8e8;box-shadow:0 0 0 1px #d0d0d0,0 0 0 3px #e8e8e8,0 28px 70px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.9);}
+.phone::before{content:'';position:absolute;top:12px;left:50%;transform:translateX(-50%);width:98px;height:28px;border-radius:16px;z-index:20;}
+.phone.dk::before{background:#000;}.phone.lt::before{background:#d0d0d0;}
+.screen-stack{width:100%;height:100%;border-radius:38px;overflow:hidden;position:relative;}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;transition:transform .35s cubic-bezier(.32,1,.23,1);}
+.screen.behind{transform:translateX(-30%);}.screen.front{transform:translateX(100%);}.screen.active{transform:translateX(0);}
+.D{--bg:#0C1520;--surface:#142030;--text:#D8E8F5;--subtext:#7890A8;--primary:#4A90C8;--border:rgba(74,144,200,.15);--border2:rgba(74,144,200,.08);--input-bg:#0C1520;--chip-on-bg:rgba(74,144,200,.18);--chip-on-bd:#4A90C8;--chip-on-tx:#D8E8F5;--ghost-bg:rgba(74,144,200,.1);--placeholder:#3A5068;--handle:rgba(255,255,255,.15);background:var(--bg);}
+.L{--bg:#F0F4F9;--surface:#FFFFFF;--text:#162035;--subtext:#607080;--primary:#1B3D6F;--border:#C8D6E5;--border2:#E0EAF4;--input-bg:#FFFFFF;--chip-on-bg:#EBF3FB;--chip-on-bd:#1B3D6F;--chip-on-tx:#1B3D6F;--ghost-bg:#EBF3FB;--placeholder:#9EB3C8;--handle:#C8D6E5;background:var(--bg);}
+:root{--sem-green:#2ECC71;--sem-yellow:#F1C40F;--sem-red:#E74C3C;}
+.sbar{height:44px;flex-shrink:0;display:flex;align-items:flex-end;justify-content:space-between;padding:0 18px 6px;font-size:10px;font-weight:700;color:var(--text);}
+.sbar-r{display:flex;gap:4px;align-items:center;}
+.hdr{flex-shrink:0;padding:8px 16px 12px;display:flex;align-items:center;justify-content:space-between;}
+.L .hdr{background:#1B3D6F;}.D .hdr{background:#142030;border-bottom:1px solid var(--border2);}
+.hdr-title{font-size:16px;font-weight:700;color:#fff;}.D .hdr-title{color:#D8E8F5;}
+.hamburger-btn{width:36px;height:36px;border-radius:10px;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:rgba(255,255,255,.15);flex-shrink:0;padding:0;}
+.D .hamburger-btn{background:rgba(74,144,200,.12);}
+.hb-line{width:16px;height:2px;border-radius:1px;background:#fff;}.D .hb-line{background:#D8E8F5;}
+.sub-hdr{flex-shrink:0;padding:8px 16px 12px;display:flex;align-items:center;gap:10px;}
+.L .sub-hdr{background:#1B3D6F;}.D .sub-hdr{background:#142030;border-bottom:1px solid var(--border2);}
+.back-btn{width:36px;height:36px;border-radius:10px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;background:rgba(255,255,255,.15);color:#fff;flex-shrink:0;}
+.D .back-btn{background:rgba(74,144,200,.12);color:#D8E8F5;}
+.sub-hdr-title{font-size:16px;font-weight:700;color:#fff;flex:1;}.D .sub-hdr-title{color:#D8E8F5;}
+.search-wrap{padding:12px 16px 8px;flex-shrink:0;background:var(--surface);border-bottom:1px solid var(--border2);}
+.search-inner{display:flex;align-items:center;gap:8px;background:var(--input-bg);border:1px solid var(--border);border-radius:12px;padding:9px 12px;}
+.search-icon{font-size:14px;flex-shrink:0;}
+.search-input{flex:1;border:none;background:transparent;font-family:inherit;font-size:13px;color:var(--text);outline:none;}
+.search-input::placeholder{color:var(--placeholder);}
+.filter-tabs{display:flex;gap:6px;padding:10px 16px;flex-shrink:0;overflow-x:auto;}
+.filter-tabs::-webkit-scrollbar{display:none;}
+.ftab{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;font-family:inherit;font-size:11px;font-weight:700;color:var(--subtext);cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.ftab.on{background:var(--chip-on-bg);border-color:var(--chip-on-bd);color:var(--chip-on-tx);}
+.ftab.on.f-reg{background:rgba(46,204,113,.15);border-color:#2ECC71;color:#27ae60;}
+.ftab.on.f-vis{background:rgba(241,196,15,.15);border-color:#F1C40F;color:#c8a000;}
+.ftab.on.f-unr{background:rgba(231,76,60,.15);border-color:#E74C3C;color:#c0392b;}
+.req-banner{margin:0 16px 4px;border-radius:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);flex-shrink:0;cursor:pointer;}
+.req-banner-left{display:flex;align-items:center;gap:8px;}
+.req-dot{width:8px;height:8px;border-radius:50%;background:#E74C3C;flex-shrink:0;animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.req-text{font-size:12px;font-weight:700;color:#E74C3C;}
+.req-arrow{font-size:12px;color:#E74C3C;}
+.scroll{flex:1;overflow-y:auto;display:flex;flex-direction:column;padding:8px 16px 16px;gap:8px;}
+.scroll::-webkit-scrollbar{display:none;}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;padding:4px 0 2px;}
+.sec-title{font-size:11px;font-weight:700;color:var(--subtext);letter-spacing:.5px;text-transform:uppercase;}
+.sec-count{font-size:10px;color:var(--subtext);}
+.vcard{border-radius:14px;overflow:hidden;display:flex;background:var(--surface);border:1px solid var(--border2);cursor:pointer;transition:opacity .1s;}
+.vcard:active{opacity:.75;}.L .vcard{box-shadow:0 1px 6px rgba(27,61,111,.06);}
+.vcard-bar{width:4px;flex-shrink:0;}
+.bar-reg{background:var(--sem-green);}.bar-vis{background:var(--sem-yellow);}.bar-unr{background:var(--sem-red);}.bar-exp{background:var(--sem-red);}
+.vcard-body{flex:1;padding:12px 12px 12px 10px;display:flex;flex-direction:column;gap:6px;}
+.vcard-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.vcard-plate{font-size:16px;font-weight:700;letter-spacing:1px;font-variant-numeric:tabular-nums;color:var(--text);}
+.vcard-right{display:flex;align-items:center;gap:6px;}
+.vcard-badge{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;}
+.badge-reg{background:rgba(46,204,113,.15);color:#27ae60;}
+.badge-vis{background:rgba(241,196,15,.15);color:#c8a000;}
+.badge-unr{background:rgba(231,76,60,.15);color:#c0392b;}
+.badge-exp{background:rgba(231,76,60,.15);color:#c0392b;}
+.card-call-btn{width:26px;height:26px;border-radius:50%;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.15);color:#22C55E;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0;}
+.vcard-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.vmeta-item{font-size:11px;color:var(--subtext);}
+.vmeta-dot{width:3px;height:3px;border-radius:50%;background:var(--border);flex-shrink:0;}
+.vcard-sub{font-size:10px;color:var(--subtext);}
+.rcard{border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid rgba(231,76,60,.25);}
+.L .rcard{box-shadow:0 1px 6px rgba(231,76,60,.08);}
+.rcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.rcard-info{display:flex;flex-direction:column;gap:3px;}
+.rcard-title{font-size:13px;font-weight:700;color:var(--text);}
+.rcard-desc{font-size:11px;color:var(--subtext);}
+.rcard-time{font-size:10px;color:var(--subtext);}
+.rcard-type{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;background:rgba(231,76,60,.12);color:#c0392b;white-space:nowrap;flex-shrink:0;}
+.rcard-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.rtag{font-size:10px;padding:3px 8px;border-radius:8px;font-weight:700;background:var(--ghost-bg);color:var(--subtext);}
+.rcard-btns{display:flex;gap:6px;}
+.rc-btn{flex:1;padding:8px 0;border-radius:10px;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+.rc-approve{background:#2ECC71;color:#fff;}
+.rc-reject{background:var(--ghost-bg);color:var(--subtext);}
+.rc-detail{background:var(--ghost-bg);color:var(--primary);flex:0.6;}
+.sheet-overlay{position:absolute;inset:0;z-index:200;background:rgba(0,0,0,0);transition:background .3s;display:flex;flex-direction:column;justify-content:flex-end;border-radius:38px;overflow:hidden;pointer-events:none;}
+.sheet-overlay.open{background:rgba(0,0,0,.55);pointer-events:all;}
+.sheet-panel{border-radius:24px 24px 0 0;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,1,.23,1);max-height:90%;overflow:hidden;}
+.D .sheet-panel{background:#142030;border-top:1px solid rgba(74,144,200,.15);}
+.L .sheet-panel{background:#fff;border-top:1px solid #C8D6E5;}
+.sheet-overlay.open .sheet-panel{transform:translateY(0);}
+.sheet-handle-wrap{padding:10px 0 4px;display:flex;justify-content:center;flex-shrink:0;cursor:grab;}
+.sheet-handle{width:40px;height:4px;border-radius:2px;background:var(--handle);}
+.sheet-scroll{overflow-y:auto;flex:1;padding:0 20px 8px;}
+.sheet-scroll::-webkit-scrollbar{display:none;}
+.sheet-top{display:flex;align-items:center;justify-content:space-between;padding:0 0 14px;}
+.sheet-plate{font-size:22px;font-weight:700;letter-spacing:1.5px;font-variant-numeric:tabular-nums;color:var(--text);}
+.sheet-badge{font-size:10px;padding:3px 9px;border-radius:12px;font-weight:700;}
+.sheet-close{width:28px;height:28px;border-radius:50%;border:none;background:var(--ghost-bg);color:var(--subtext);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.sheet-section{margin-bottom:14px;}
+.sheet-sec-title{font-size:10px;font-weight:700;color:var(--subtext);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.info-item{display:flex;flex-direction:column;gap:3px;}
+.info-lbl{font-size:10px;color:var(--subtext);}
+.info-val{font-size:13px;font-weight:700;color:var(--text);}
+.contact-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;background:var(--ghost-bg);border:1px solid var(--border);}
+.contact-info{display:flex;flex-direction:column;gap:2px;}
+.contact-name{font-size:13px;font-weight:700;color:var(--text);}
+.contact-num{font-size:11px;color:var(--subtext);}
+.contact-btns{display:flex;gap:6px;}
+.c-btn{width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.c-btn-call{background:rgba(34,197,94,.15);color:#22C55E;border:1px solid rgba(34,197,94,.3);}
+.c-btn-sms{background:var(--ghost-bg);color:var(--primary);border:1px solid var(--border);}
+.divider{height:1px;background:var(--border2);margin:4px 0 14px;}
+.edit-field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+.edit-label{font-size:11px;font-weight:700;color:var(--subtext);}
+.edit-input{padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:inherit;font-size:13px;outline:none;}
+.edit-input:focus{border-color:var(--primary);}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:transparent;font-family:inherit;font-size:11px;font-weight:700;color:var(--subtext);cursor:pointer;}
+.chip.on{background:var(--chip-on-bg);border-color:var(--chip-on-bd);color:var(--chip-on-tx);}
+.sheet-btns{display:flex;gap:8px;padding:10px 20px 14px;flex-shrink:0;border-top:1px solid var(--border2);}
+.s-btn{flex:1;padding:13px 0;border-radius:12px;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;}
+.s-btn-del{background:rgba(231,76,60,.12);color:#c0392b;flex:0.6;}
+.s-btn-save{background:var(--primary);color:#fff;}
+.bnav{height:62px;flex-shrink:0;display:flex;align-items:center;justify-content:space-around;padding:0 4px 6px;}
+.L .bnav{background:#fff;border-top:1px solid rgba(27,61,111,.1);}
+.D .bnav{background:#142030;border-top:1px solid rgba(74,144,200,.1);}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 8px;border-radius:10px;font-size:9px;font-weight:400;border:none;background:transparent;font-family:inherit;flex:1;color:var(--subtext);cursor:pointer;position:relative;}
+.nav-item.on{color:var(--primary);font-weight:700;}
+.nav-icon{font-size:18px;line-height:1;}
+.nav-badge{position:absolute;top:2px;right:10px;min-width:16px;height:16px;border-radius:8px;background:#E74C3C;color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px;}
+.empty-state{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 0;}
+.empty-icon{font-size:32px;opacity:.35;}
+.empty-text{font-size:12px;color:var(--subtext);text-align:center;line-height:1.6;}
+</style>
+</head>
+<body>
+<h2>🚗 차량관리 탭 v4</h2>
+<div class="note">
+  차량 카드 클릭 → 상세/수정 바텀 시트 &nbsp;·&nbsp; 전화번호 등록 시 카드 우측 📞 버튼 표시<br>
+  1.전체(Dark) &nbsp;·&nbsp; 2.전체(Light) &nbsp;·&nbsp; 3.등록요청(Dark) &nbsp;·&nbsp; 4.방문필터(Light) &nbsp;·&nbsp; 5.미등록필터(Dark)
+</div>
+<div class="phones-row">
+<div class="pw"><div class="plabel">1. 전체 리스트 (Dark) — 탭 가능</div><div class="phone dk"><div class="screen-stack"><div class="screen D active" id="main1">
+  <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+  <div class="hdr"><div class="hdr-title">차량관리</div><button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button></div>
+  <div class="search-wrap"><div class="search-inner"><span class="search-icon">🔍</span><input class="search-input" placeholder="번호판, 동호수 검색"></div></div>
+  <div class="filter-tabs"><button class="ftab on">전체 <span style="opacity:.6">24</span></button><button class="ftab f-reg">등록 <span style="opacity:.6">18</span></button><button class="ftab f-vis">방문 <span style="opacity:.6">4</span></button><button class="ftab f-unr">미등록 <span style="opacity:.6">2</span></button></div>
+  <div class="req-banner" onclick="slideIn('req1','main1')"><div class="req-banner-left"><div class="req-dot"></div><div class="req-text">차량 등록 요청 3건 대기 중</div></div><div class="req-arrow">→</div></div>
+  <div class="scroll"><div class="sec-hdr"><div class="sec-title" style="color:#c0392b">미등록 감지</div><div class="sec-count">2건</div></div><div class="vcard" onclick="openSheet('ov1','sh_unr_ov1')">
+  <div class="vcard-bar bar-unr"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate" style="color:#E74C3C">55다 1234</div><div class="vcard-right"><div class="vcard-badge badge-unr">미등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">2026.05.14 오전 9:12 감지</div></div>
+    <div class="vcard-sub">감지 횟수 3회</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov1','sh_unr_ov1')">
+  <div class="vcard-bar bar-unr"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate" style="color:#E74C3C">99바 7777</div><div class="vcard-right"><div class="vcard-badge badge-unr">미등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">2026.05.13 오후 6:44 감지</div></div>
+    <div class="vcard-sub">감지 횟수 1회</div>
+  </div>
+</div><div class="sec-hdr" style="margin-top:4px"><div class="sec-title" style="color:#c8a000">방문 차량</div><div class="sec-count">4대</div></div><div class="vcard" onclick="openSheet('ov1','sh_vis_ov1')">
+  <div class="vcard-bar bar-exp"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">77라 9012</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-exp">만료</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">203동 1501호 방문</div><div class="vmeta-dot"></div><div class="vmeta-item">일반방문</div></div>
+    <div class="vcard-sub" style="color:#E74C3C">만료 2026.05.13 18:00</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov1','sh_vis_ov1')">
+  <div class="vcard-bar bar-vis"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">55다 9999</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-vis">방문</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">101동 302호 방문</div><div class="vmeta-dot"></div><div class="vmeta-item">중고거래</div></div>
+    <div class="vcard-sub">~2026.05.14 23:59</div>
+  </div>
+</div><div class="sec-hdr" style="margin-top:4px"><div class="sec-title" style="color:#27ae60">등록 차량</div><div class="sec-count">18대</div></div><div class="vcard" onclick="openSheet('ov1','sh_reg_ov1')">
+  <div class="vcard-bar bar-reg"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">12가 3456</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-reg">등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">101동 302호</div><div class="vmeta-dot"></div><div class="vmeta-item">현대 쏘나타</div><div class="vmeta-dot"></div><div class="vmeta-item">화이트</div></div>
+    <div class="vcard-sub">등록일 2025.01.15</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov1','sh_reg_ov1')">
+  <div class="vcard-bar bar-reg"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">34나 5678</div><div class="vcard-right"><div class="vcard-badge badge-reg">등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">203동 1501호</div><div class="vmeta-dot"></div><div class="vmeta-item">기아 K5</div><div class="vmeta-dot"></div><div class="vmeta-item">블랙</div></div>
+    <div class="vcard-sub">등록일 2024.08.22</div>
+  </div>
+</div></div>
+  <div class="bnav"><button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button><button class="nav-item"><div class="nav-icon">📷</div><span>스캔</span></button><button class="nav-item on"><div class="nav-badge">3</div><div class="nav-icon">🚗</div><span>차량관리</span></button><button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button><button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button></div>
+  <div class="sheet-overlay D" id="ov1" onclick="bgClose(event,'ov1')"><div class="sheet-panel D" id="sh_unr_ov1" style="display:none" onclick="event.stopPropagation()" onmousedown="startDrag(event,'sh_unr_ov1','ov1')" ontouchstart="startDragT(event,'sh_unr_ov1','ov1')">
+  <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+  <div class="sheet-scroll">
+    <div class="sheet-top">
+      <div><div class="sheet-plate" style="color:#E74C3C">55다 1234</div></div>
+      <div style="display:flex;align-items:center;gap:8px"><div class="sheet-badge badge-unr">미등록</div><button class="sheet-close" onclick="closeSheet('ov1')">✕</button></div>
+    </div>
+    <div class="sheet-section"><div class="sheet-sec-title">감지 정보</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-lbl">최초 감지</div><div class="info-val">2026.05.14 09:12</div></div>
+        <div class="info-item"><div class="info-lbl">감지 횟수</div><div class="info-val" style="color:#E74C3C">3회</div></div>
+        <div class="info-item"><div class="info-lbl">최근 구역</div><div class="info-val">B2 주차장</div></div>
+        <div class="info-item"><div class="info-lbl">조치 여부</div><div class="info-val">경고장 부착</div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sheet-section"><div class="sheet-sec-title">빠른 조치</div>
+      <div class="chip-row">
+        <button class="chip" style="border-color:#2ECC71;color:#27ae60">방문 등록</button>
+        <button class="chip" style="border-color:#E74C3C;color:#c0392b">무단주차 처리</button>
+      </div>
+    </div>
+  </div>
+  <div class="sheet-btns"><button class="s-btn s-btn-del">삭제</button><button class="s-btn s-btn-save">방문 등록</button></div>
+</div><div class="sheet-panel D" id="sh_vis_ov1" style="display:none" onclick="event.stopPropagation()" onmousedown="startDrag(event,'sh_vis_ov1','ov1')" ontouchstart="startDragT(event,'sh_vis_ov1','ov1')">
+  <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+  <div class="sheet-scroll">
+    <div class="sheet-top">
+      <div><div class="sheet-plate">77라 9012</div></div>
+      <div style="display:flex;align-items:center;gap:8px"><div class="sheet-badge badge-exp">만료</div><button class="sheet-close" onclick="closeSheet('ov1')">✕</button></div>
+    </div>
+    <div class="sheet-section"><div class="sheet-sec-title">방문 정보</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-lbl">방문 동·호수</div><div class="info-val">203동 1501호</div></div>
+        <div class="info-item"><div class="info-lbl">방문 목적</div><div class="info-val">일반방문</div></div>
+        <div class="info-item"><div class="info-lbl">허가 상태</div><div class="info-val" style="color:#E74C3C">만료됨</div></div>
+        <div class="info-item"><div class="info-lbl">만료일시</div><div class="info-val">2026.05.13 18:00</div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sheet-section"><div class="sheet-sec-title">차주 연락처</div>
+      <div class="contact-row">
+        <div class="contact-info"><div class="contact-name">방문자</div><div class="contact-num">010-1234-5678</div></div>
+        <div class="contact-btns"><button class="c-btn c-btn-call">📞</button><button class="c-btn c-btn-sms">💬</button></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sheet-section"><div class="sheet-sec-title">기간 연장</div>
+      <div class="chip-row"><button class="chip">+1일</button><button class="chip">+2일</button><button class="chip on">직접지정</button></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input class="edit-input" type="date" value="2026-05-16" style="flex:1;font-size:11px">
+        <input class="edit-input" type="time" value="18:00" style="flex:1;font-size:11px">
+      </div>
+    </div>
+  </div>
+  <div class="sheet-btns"><button class="s-btn s-btn-del">삭제</button><button class="s-btn s-btn-save">기간 연장</button></div>
+</div><div class="sheet-panel D" id="sh_reg_ov1" style="display:none" onclick="event.stopPropagation()" onmousedown="startDrag(event,'sh_reg_ov1','ov1')" ontouchstart="startDragT(event,'sh_reg_ov1','ov1')">
+  <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+  <div class="sheet-scroll">
+    <div class="sheet-top">
+      <div><div class="sheet-plate">12가 3456</div></div>
+      <div style="display:flex;align-items:center;gap:8px"><div class="sheet-badge badge-reg">등록</div><button class="sheet-close" onclick="closeSheet('ov1')">✕</button></div>
+    </div>
+    <div class="sheet-section"><div class="sheet-sec-title">차량 정보</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-lbl">동·호수</div><div class="info-val">101동 302호</div></div>
+        <div class="info-item"><div class="info-lbl">등록일</div><div class="info-val">2025.01.15</div></div>
+        <div class="info-item"><div class="info-lbl">차종</div><div class="info-val">현대 쏘나타</div></div>
+        <div class="info-item"><div class="info-lbl">색상</div><div class="info-val">화이트</div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sheet-section"><div class="sheet-sec-title">차주 연락처</div>
+      <div class="contact-row">
+        <div class="contact-info"><div class="contact-name">김○○</div><div class="contact-num">010-9876-5432</div></div>
+        <div class="contact-btns"><button class="c-btn c-btn-call">📞</button><button class="c-btn c-btn-sms">💬</button></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sheet-section"><div class="sheet-sec-title">정보 수정</div>
+      <div class="edit-field"><div class="edit-label">차량 번호</div><input class="edit-input" type="text" value="12가 3456"></div>
+      <div class="edit-field"><div class="edit-label">차종</div><input class="edit-input" type="text" value="현대 쏘나타"></div>
+      <div class="edit-field"><div class="edit-label">색상</div><input class="edit-input" type="text" value="화이트"></div>
+      <div class="edit-field"><div class="edit-label">메모</div><input class="edit-input" type="text" placeholder="특이사항 입력"></div>
+    </div>
+  </div>
+  <div class="sheet-btns"><button class="s-btn s-btn-del">삭제</button><button class="s-btn s-btn-save">저장</button></div>
+</div></div>
+</div><div class="screen D front" id="req1">
+  <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+  <div class="sub-hdr"><button class="back-btn" onclick="slideOut('req1','main1')">&#8249;</button><div class="sub-hdr-title">차량 등록 요청</div></div>
+  <div class="scroll" style="padding-top:12px">
+    <div class="sec-hdr"><div class="sec-title" style="color:#c0392b">⏳ 대기 중</div><div class="sec-count">3건</div></div>
+    <div class="rcard">
+  <div class="rcard-top"><div class="rcard-info"><div class="rcard-title">차량 등록 요청</div><div class="rcard-desc">101동 302호 · 김○○</div><div class="rcard-time">5분 전</div></div><div class="rcard-type">차량 등록</div></div>
+  <div class="rcard-tags"><div class="rtag">101동 302호</div><div class="rtag">12가 3456</div><div class="rtag">현대 쏘나타</div></div>
+  <div class="rcard-btns"><button class="rc-btn rc-approve">✓ 승인</button><button class="rc-btn rc-reject">✕ 거절</button><button class="rc-btn rc-detail">상세</button></div>
+</div><div class="rcard">
+  <div class="rcard-top"><div class="rcard-info"><div class="rcard-title">방문차량 등록 요청</div><div class="rcard-desc">203동 1501호 · 이○○</div><div class="rcard-time">23분 전</div></div><div class="rcard-type">방문 등록</div></div>
+  <div class="rcard-tags"><div class="rtag">203동 1501호</div><div class="rtag">55다 1234</div><div class="rtag">당일</div></div>
+  <div class="rcard-btns"><button class="rc-btn rc-approve">✓ 승인</button><button class="rc-btn rc-reject">✕ 거절</button><button class="rc-btn rc-detail">상세</button></div>
+</div><div class="rcard">
+  <div class="rcard-top"><div class="rcard-info"><div class="rcard-title">차량 등록 요청</div><div class="rcard-desc">102동 101호 · 박○○</div><div class="rcard-time">1시간 전</div></div><div class="rcard-type">차량 등록</div></div>
+  <div class="rcard-tags"><div class="rtag">102동 101호</div><div class="rtag">34나 5678</div><div class="rtag">기아 K5</div></div>
+  <div class="rcard-btns"><button class="rc-btn rc-approve">✓ 승인</button><button class="rc-btn rc-reject">✕ 거절</button><button class="rc-btn rc-detail">상세</button></div>
+</div>
+  </div>
+  <div class="bnav"><button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button><button class="nav-item"><div class="nav-icon">📷</div><span>스캔</span></button><button class="nav-item on"><div class="nav-badge">3</div><div class="nav-icon">🚗</div><span>차량관리</span></button><button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button><button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button></div>
+</div></div></div></div><div class="pw"><div class="plabel">2. 전체 리스트 (Light) — 탭 가능</div><div class="phone lt"><div class="screen-stack"><div class="screen L active" id="main2">
+  <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+  <div class="hdr"><div class="hdr-title">차량관리</div><button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button></div>
+  <div class="search-wrap"><div class="search-inner"><span class="search-icon">🔍</span><input class="search-input" placeholder="번호판, 동호수 검색"></div></div>
+  <div class="filter-tabs"><button class="ftab on">전체 <span style="opacity:.6">24</span></button><button class="ftab f-reg">등록 <span style="opacity:.6">18</span></button><button class="ftab f-vis">방문 <span style="opacity:.6">4</span></button><button class="ftab f-unr">미등록 <span style="opacity:.6">2</span></button></div>
+  <div class="req-banner" onclick="slideIn('req2','main2')"><div class="req-banner-left"><div class="req-dot"></div><div class="req-text">차량 등록 요청 3건 대기 중</div></div><div class="req-arrow">→</div></div>
+  <div class="scroll"><div class="sec-hdr"><div class="sec-title" style="color:#c0392b">미등록 감지</div><div class="sec-count">2건</div></div><div class="vcard" onclick="openSheet('ov2','sh_unr_ov2')">
+  <div class="vcard-bar bar-unr"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate" style="color:#E74C3C">55다 1234</div><div class="vcard-right"><div class="vcard-badge badge-unr">미등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">2026.05.14 오전 9:12 감지</div></div>
+    <div class="vcard-sub">감지 횟수 3회</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov2','sh_unr_ov2')">
+  <div class="vcard-bar bar-unr"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate" style="color:#E74C3C">99바 7777</div><div class="vcard-right"><div class="vcard-badge badge-unr">미등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">2026.05.13 오후 6:44 감지</div></div>
+    <div class="vcard-sub">감지 횟수 1회</div>
+  </div>
+</div><div class="sec-hdr" style="margin-top:4px"><div class="sec-title" style="color:#c8a000">방문 차량</div><div class="sec-count">4대</div></div><div class="vcard" onclick="openSheet('ov2','sh_vis_ov2')">
+  <div class="vcard-bar bar-exp"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">77라 9012</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-exp">만료</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">203동 1501호 방문</div><div class="vmeta-dot"></div><div class="vmeta-item">일반방문</div></div>
+    <div class="vcard-sub" style="color:#E74C3C">만료 2026.05.13 18:00</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov2','sh_vis_ov2')">
+  <div class="vcard-bar bar-vis"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">55다 9999</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-vis">방문</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">101동 302호 방문</div><div class="vmeta-dot"></div><div class="vmeta-item">중고거래</div></div>
+    <div class="vcard-sub">~2026.05.14 23:59</div>
+  </div>
+</div><div class="sec-hdr" style="margin-top:4px"><div class="sec-title" style="color:#27ae60">등록 차량</div><div class="sec-count">18대</div></div><div class="vcard" onclick="openSheet('ov2','sh_reg_ov2')">
+  <div class="vcard-bar bar-reg"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">12가 3456</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-reg">등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">101동 302호</div><div class="vmeta-dot"></div><div class="vmeta-item">현대 쏘나타</div><div class="vmeta-dot"></div><div class="vmeta-item">화이트</div></div>
+    <div class="vcard-sub">등록일 2025.01.15</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov2','sh_reg_ov2')">
+  <div class="vcard-bar bar-reg"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">34나 5678</div><div class="vcard-right"><div class="vcard-badge badge-reg">등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">203동 1501호</div><div class="vmeta-dot"></div><div class="vmeta-item">기아 K5</div><div class="vmeta-dot"></div><div class="vmeta-item">블랙</div></div>
+    <div class="vcard-sub">등록일 2024.08.22</div>
+  </div>
+</div></div>
+  <div class="bnav"><button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button><button class="nav-item"><div class="nav-icon">📷</div><span>스캔</span></button><button class="nav-item on"><div class="nav-badge">3</div><div class="nav-icon">🚗</div><span>차량관리</span></button><button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button><button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button></div>
+  <div class="sheet-overlay L" id="ov2" onclick="bgClose(event,'ov2')"><div class="sheet-panel L" id="sh_unr_ov2" style="display:none" onclick="event.stopPropagation()" onmousedown="startDrag(event,'sh_unr_ov2','ov2')" ontouchstart="startDragT(event,'sh_unr_ov2','ov2')">
+  <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+  <div class="sheet-scroll">
+    <div class="sheet-top">
+      <div><div class="sheet-plate" style="color:#E74C3C">55다 1234</div></div>
+      <div style="display:flex;align-items:center;gap:8px"><div class="sheet-badge badge-unr">미등록</div><button class="sheet-close" onclick="closeSheet('ov2')">✕</button></div>
+    </div>
+    <div class="sheet-section"><div class="sheet-sec-title">감지 정보</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-lbl">최초 감지</div><div class="info-val">2026.05.14 09:12</div></div>
+        <div class="info-item"><div class="info-lbl">감지 횟수</div><div class="info-val" style="color:#E74C3C">3회</div></div>
+        <div class="info-item"><div class="info-lbl">최근 구역</div><div class="info-val">B2 주차장</div></div>
+        <div class="info-item"><div class="info-lbl">조치 여부</div><div class="info-val">경고장 부착</div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sheet-section"><div class="sheet-sec-title">빠른 조치</div>
+      <div class="chip-row">
+        <button class="chip" style="border-color:#2ECC71;color:#27ae60">방문 등록</button>
+        <button class="chip" style="border-color:#E74C3C;color:#c0392b">무단주차 처리</button>
+      </div>
+    </div>
+  </div>
+  <div class="sheet-btns"><button class="s-btn s-btn-del">삭제</button><button class="s-btn s-btn-save">방문 등록</button></div>
+</div><div class="sheet-panel L" id="sh_vis_ov2" style="display:none" onclick="event.stopPropagation()" onmousedown="startDrag(event,'sh_vis_ov2','ov2')" ontouchstart="startDragT(event,'sh_vis_ov2','ov2')">
+  <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+  <div class="sheet-scroll">
+    <div class="sheet-top">
+      <div><div class="sheet-plate">77라 9012</div></div>
+      <div style="display:flex;align-items:center;gap:8px"><div class="sheet-badge badge-exp">만료</div><button class="sheet-close" onclick="closeSheet('ov2')">✕</button></div>
+    </div>
+    <div class="sheet-section"><div class="sheet-sec-title">방문 정보</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-lbl">방문 동·호수</div><div class="info-val">203동 1501호</div></div>
+        <div class="info-item"><div class="info-lbl">방문 목적</div><div class="info-val">일반방문</div></div>
+        <div class="info-item"><div class="info-lbl">허가 상태</div><div class="info-val" style="color:#E74C3C">만료됨</div></div>
+        <div class="info-item"><div class="info-lbl">만료일시</div><div class="info-val">2026.05.13 18:00</div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sheet-section"><div class="sheet-sec-title">차주 연락처</div>
+      <div class="contact-row">
+        <div class="contact-info"><div class="contact-name">방문자</div><div class="contact-num">010-1234-5678</div></div>
+        <div class="contact-btns"><button class="c-btn c-btn-call">📞</button><button class="c-btn c-btn-sms">💬</button></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sheet-section"><div class="sheet-sec-title">기간 연장</div>
+      <div class="chip-row"><button class="chip">+1일</button><button class="chip">+2일</button><button class="chip on">직접지정</button></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input class="edit-input" type="date" value="2026-05-16" style="flex:1;font-size:11px">
+        <input class="edit-input" type="time" value="18:00" style="flex:1;font-size:11px">
+      </div>
+    </div>
+  </div>
+  <div class="sheet-btns"><button class="s-btn s-btn-del">삭제</button><button class="s-btn s-btn-save">기간 연장</button></div>
+</div><div class="sheet-panel L" id="sh_reg_ov2" style="display:none" onclick="event.stopPropagation()" onmousedown="startDrag(event,'sh_reg_ov2','ov2')" ontouchstart="startDragT(event,'sh_reg_ov2','ov2')">
+  <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+  <div class="sheet-scroll">
+    <div class="sheet-top">
+      <div><div class="sheet-plate">12가 3456</div></div>
+      <div style="display:flex;align-items:center;gap:8px"><div class="sheet-badge badge-reg">등록</div><button class="sheet-close" onclick="closeSheet('ov2')">✕</button></div>
+    </div>
+    <div class="sheet-section"><div class="sheet-sec-title">차량 정보</div>
+      <div class="info-grid">
+        <div class="info-item"><div class="info-lbl">동·호수</div><div class="info-val">101동 302호</div></div>
+        <div class="info-item"><div class="info-lbl">등록일</div><div class="info-val">2025.01.15</div></div>
+        <div class="info-item"><div class="info-lbl">차종</div><div class="info-val">현대 쏘나타</div></div>
+        <div class="info-item"><div class="info-lbl">색상</div><div class="info-val">화이트</div></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sheet-section"><div class="sheet-sec-title">차주 연락처</div>
+      <div class="contact-row">
+        <div class="contact-info"><div class="contact-name">김○○</div><div class="contact-num">010-9876-5432</div></div>
+        <div class="contact-btns"><button class="c-btn c-btn-call">📞</button><button class="c-btn c-btn-sms">💬</button></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="sheet-section"><div class="sheet-sec-title">정보 수정</div>
+      <div class="edit-field"><div class="edit-label">차량 번호</div><input class="edit-input" type="text" value="12가 3456"></div>
+      <div class="edit-field"><div class="edit-label">차종</div><input class="edit-input" type="text" value="현대 쏘나타"></div>
+      <div class="edit-field"><div class="edit-label">색상</div><input class="edit-input" type="text" value="화이트"></div>
+      <div class="edit-field"><div class="edit-label">메모</div><input class="edit-input" type="text" placeholder="특이사항 입력"></div>
+    </div>
+  </div>
+  <div class="sheet-btns"><button class="s-btn s-btn-del">삭제</button><button class="s-btn s-btn-save">저장</button></div>
+</div></div>
+</div><div class="screen L front" id="req2">
+  <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+  <div class="sub-hdr"><button class="back-btn" onclick="slideOut('req2','main2')">&#8249;</button><div class="sub-hdr-title">차량 등록 요청</div></div>
+  <div class="scroll" style="padding-top:12px">
+    <div class="sec-hdr"><div class="sec-title" style="color:#c0392b">⏳ 대기 중</div><div class="sec-count">3건</div></div>
+    <div class="rcard">
+  <div class="rcard-top"><div class="rcard-info"><div class="rcard-title">차량 등록 요청</div><div class="rcard-desc">101동 302호 · 김○○</div><div class="rcard-time">5분 전</div></div><div class="rcard-type">차량 등록</div></div>
+  <div class="rcard-tags"><div class="rtag">101동 302호</div><div class="rtag">12가 3456</div><div class="rtag">현대 쏘나타</div></div>
+  <div class="rcard-btns"><button class="rc-btn rc-approve">✓ 승인</button><button class="rc-btn rc-reject">✕ 거절</button><button class="rc-btn rc-detail">상세</button></div>
+</div><div class="rcard">
+  <div class="rcard-top"><div class="rcard-info"><div class="rcard-title">방문차량 등록 요청</div><div class="rcard-desc">203동 1501호 · 이○○</div><div class="rcard-time">23분 전</div></div><div class="rcard-type">방문 등록</div></div>
+  <div class="rcard-tags"><div class="rtag">203동 1501호</div><div class="rtag">55다 1234</div><div class="rtag">당일</div></div>
+  <div class="rcard-btns"><button class="rc-btn rc-approve">✓ 승인</button><button class="rc-btn rc-reject">✕ 거절</button><button class="rc-btn rc-detail">상세</button></div>
+</div><div class="rcard">
+  <div class="rcard-top"><div class="rcard-info"><div class="rcard-title">차량 등록 요청</div><div class="rcard-desc">102동 101호 · 박○○</div><div class="rcard-time">1시간 전</div></div><div class="rcard-type">차량 등록</div></div>
+  <div class="rcard-tags"><div class="rtag">102동 101호</div><div class="rtag">34나 5678</div><div class="rtag">기아 K5</div></div>
+  <div class="rcard-btns"><button class="rc-btn rc-approve">✓ 승인</button><button class="rc-btn rc-reject">✕ 거절</button><button class="rc-btn rc-detail">상세</button></div>
+</div>
+  </div>
+  <div class="bnav"><button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button><button class="nav-item"><div class="nav-icon">📷</div><span>스캔</span></button><button class="nav-item on"><div class="nav-badge">3</div><div class="nav-icon">🚗</div><span>차량관리</span></button><button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button><button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button></div>
+</div></div></div></div><div class="pw"><div class="plabel">3. 등록 요청 처리 (Dark)</div>
+<div class="phone dk"><div class="screen-stack">
+  <div class="screen D active">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="sub-hdr"><button class="back-btn" onclick="">&#8249;</button><div class="sub-hdr-title">차량 등록 요청</div></div>
+    <div class="scroll" style="padding-top:12px">
+      <div class="sec-hdr"><div class="sec-title" style="color:#c0392b">⏳ 대기 중</div><div class="sec-count">3건</div></div>
+      <div class="rcard">
+  <div class="rcard-top"><div class="rcard-info"><div class="rcard-title">차량 등록 요청</div><div class="rcard-desc">101동 302호 · 김○○</div><div class="rcard-time">5분 전</div></div><div class="rcard-type">차량 등록</div></div>
+  <div class="rcard-tags"><div class="rtag">101동 302호</div><div class="rtag">12가 3456</div><div class="rtag">현대 쏘나타</div></div>
+  <div class="rcard-btns"><button class="rc-btn rc-approve">✓ 승인</button><button class="rc-btn rc-reject">✕ 거절</button><button class="rc-btn rc-detail">상세</button></div>
+</div><div class="rcard">
+  <div class="rcard-top"><div class="rcard-info"><div class="rcard-title">방문차량 등록 요청</div><div class="rcard-desc">203동 1501호 · 이○○</div><div class="rcard-time">23분 전</div></div><div class="rcard-type">방문 등록</div></div>
+  <div class="rcard-tags"><div class="rtag">203동 1501호</div><div class="rtag">55다 1234</div><div class="rtag">당일</div></div>
+  <div class="rcard-btns"><button class="rc-btn rc-approve">✓ 승인</button><button class="rc-btn rc-reject">✕ 거절</button><button class="rc-btn rc-detail">상세</button></div>
+</div><div class="rcard">
+  <div class="rcard-top"><div class="rcard-info"><div class="rcard-title">차량 등록 요청</div><div class="rcard-desc">102동 101호 · 박○○</div><div class="rcard-time">1시간 전</div></div><div class="rcard-type">차량 등록</div></div>
+  <div class="rcard-tags"><div class="rtag">102동 101호</div><div class="rtag">34나 5678</div><div class="rtag">기아 K5</div></div>
+  <div class="rcard-btns"><button class="rc-btn rc-approve">✓ 승인</button><button class="rc-btn rc-reject">✕ 거절</button><button class="rc-btn rc-detail">상세</button></div>
+</div>
+    </div>
+    <div class="bnav"><button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button><button class="nav-item"><div class="nav-icon">📷</div><span>스캔</span></button><button class="nav-item on"><div class="nav-badge">3</div><div class="nav-icon">🚗</div><span>차량관리</span></button><button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button><button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button></div>
+  </div>
+</div></div></div><div class="pw"><div class="plabel">4. 방문차량 필터 (Light)</div>
+<div class="phone lt"><div class="screen-stack">
+  <div class="screen L active">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr"><div class="hdr-title">차량관리</div><button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button></div>
+    <div class="search-wrap"><div class="search-inner"><span class="search-icon">🔍</span><input class="search-input" placeholder="번호판, 동호수 검색"></div></div>
+    <div class="filter-tabs"><button class="ftab">전체 <span style="opacity:.6">24</span></button><button class="ftab f-reg">등록 <span style="opacity:.6">18</span></button><button class="ftab on f-vis">방문 <span style="opacity:.6">4</span></button><button class="ftab f-unr">미등록 <span style="opacity:.6">2</span></button></div>
+    <div class="scroll" style="padding-top:12px">
+      <div class="sec-hdr"><div class="sec-title" style="color:#c8a000">방문 차량</div><div class="sec-count">4대</div></div>
+      <div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-exp"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">77라 9012</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-exp">만료</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">203동 1501호 방문</div><div class="vmeta-dot"></div><div class="vmeta-item">일반방문</div></div>
+    <div class="vcard-sub" style="color:#E74C3C">만료 2026.05.13 18:00</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-vis"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">55다 9999</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-vis">방문</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">101동 302호 방문</div><div class="vmeta-dot"></div><div class="vmeta-item">중고거래</div></div>
+    <div class="vcard-sub">~2026.05.14 23:59</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-vis"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">88마 3456</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-vis">방문</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">101동 401호 방문</div><div class="vmeta-dot"></div><div class="vmeta-item">기타</div></div>
+    <div class="vcard-sub">~2026.05.16 18:00</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-vis"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">11사 2233</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-vis">방문</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">102동 101호 방문</div><div class="vmeta-dot"></div><div class="vmeta-item">일반방문</div></div>
+    <div class="vcard-sub">~2026.05.14 21:00</div>
+  </div>
+</div>
+    </div>
+    <div class="bnav"><button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button><button class="nav-item"><div class="nav-icon">📷</div><span>스캔</span></button><button class="nav-item on"><div class="nav-badge">3</div><div class="nav-icon">🚗</div><span>차량관리</span></button><button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button><button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button></div>
+  </div>
+</div></div></div><div class="pw"><div class="plabel">5. 미등록 필터 (Dark)</div>
+<div class="phone dk"><div class="screen-stack">
+  <div class="screen D active">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr"><div class="hdr-title">차량관리</div><button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button></div>
+    <div class="search-wrap"><div class="search-inner"><span class="search-icon">🔍</span><input class="search-input" placeholder="번호판, 동호수 검색"></div></div>
+    <div class="filter-tabs"><button class="ftab">전체 <span style="opacity:.6">24</span></button><button class="ftab f-reg">등록 <span style="opacity:.6">18</span></button><button class="ftab f-vis">방문 <span style="opacity:.6">4</span></button><button class="ftab on f-unr">미등록 <span style="opacity:.6">2</span></button></div>
+    <div class="scroll" style="padding-top:12px">
+      <div class="sec-hdr"><div class="sec-title" style="color:#c0392b">미등록 감지</div><div class="sec-count">2건</div></div>
+      <div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-unr"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate" style="color:#E74C3C">55다 1234</div><div class="vcard-right"><div class="vcard-badge badge-unr">미등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">2026.05.14 오전 9:12 감지</div></div>
+    <div class="vcard-sub">감지 횟수 3회</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-unr"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate" style="color:#E74C3C">99바 7777</div><div class="vcard-right"><div class="vcard-badge badge-unr">미등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">2026.05.13 오후 6:44 감지</div></div>
+    <div class="vcard-sub">감지 횟수 1회</div>
+  </div>
+</div>
+      <div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">미등록 감지 차량 2건<br>스캔 탭에서 즉시 조치 가능합니다</div></div>
+    </div>
+    <div class="bnav"><button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button><button class="nav-item"><div class="nav-icon">📷</div><span>스캔</span></button><button class="nav-item on"><div class="nav-badge">3</div><div class="nav-icon">🚗</div><span>차량관리</span></button><button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button><button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button></div>
+  </div>
+</div></div></div><div class="pw"><div class="plabel">6. 등록차량 필터 (Light)</div>
+<div class="phone lt"><div class="screen-stack">
+  <div class="screen L active">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr"><div class="hdr-title">차량관리</div><button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button></div>
+    <div class="search-wrap"><div class="search-inner"><span class="search-icon">🔍</span><input class="search-input" placeholder="번호판, 동호수 검색"></div></div>
+    <div class="filter-tabs"><button class="ftab">전체 <span style="opacity:.6">24</span></button><button class="ftab on f-reg">등록 <span style="opacity:.6">18</span></button><button class="ftab f-vis">방문 <span style="opacity:.6">4</span></button><button class="ftab f-unr">미등록 <span style="opacity:.6">2</span></button></div>
+    <div class="scroll" style="padding-top:12px">
+      <div class="sec-hdr"><div class="sec-title" style="color:#27ae60">등록 차량</div><div class="sec-count">18대</div></div>
+      <div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-reg"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">12가 3456</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-reg">등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">101동 302호</div><div class="vmeta-dot"></div><div class="vmeta-item">현대 쏘나타</div><div class="vmeta-dot"></div><div class="vmeta-item">화이트</div></div>
+    <div class="vcard-sub">등록일 2025.01.15</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-reg"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">34나 5678</div><div class="vcard-right"><div class="vcard-badge badge-reg">등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">203동 1501호</div><div class="vmeta-dot"></div><div class="vmeta-item">기아 K5</div><div class="vmeta-dot"></div><div class="vmeta-item">블랙</div></div>
+    <div class="vcard-sub">등록일 2024.08.22</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-reg"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">56다 7890</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-reg">등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">301동 201호</div><div class="vmeta-dot"></div><div class="vmeta-item">BMW 5시리즈</div><div class="vmeta-dot"></div><div class="vmeta-item">실버</div></div>
+    <div class="vcard-sub">등록일 2025.03.08</div>
+  </div>
+</div><div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-reg"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">78라 1234</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-reg">등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">102동 501호</div><div class="vmeta-dot"></div><div class="vmeta-item">현대 아반떼</div><div class="vmeta-dot"></div><div class="vmeta-item">레드</div></div>
+    <div class="vcard-sub">등록일 2023.11.20</div>
+  </div>
+</div>
+    </div>
+    <div class="bnav"><button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button><button class="nav-item"><div class="nav-icon">📷</div><span>스캔</span></button><button class="nav-item on"><div class="nav-badge">3</div><div class="nav-icon">🚗</div><span>차량관리</span></button><button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button><button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button></div>
+  </div>
+</div></div></div><div class="pw"><div class="plabel">7. 등록차량 상세 시트 (Dark)</div>
+<div class="phone dk"><div class="screen-stack">
+  <div class="screen D active">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr"><div class="hdr-title">차량관리</div><button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button></div>
+    <div class="search-wrap"><div class="search-inner"><span class="search-icon">🔍</span><input class="search-input" placeholder="번호판, 동호수 검색"></div></div>
+    <div class="filter-tabs"><button class="ftab on">전체 <span style="opacity:.6">24</span></button><button class="ftab f-reg">등록 <span style="opacity:.6">18</span></button><button class="ftab f-vis">방문 <span style="opacity:.6">4</span></button><button class="ftab f-unr">미등록 <span style="opacity:.6">2</span></button></div>
+    <div class="req-banner" onclick=""><div class="req-banner-left"><div class="req-dot"></div><div class="req-text">차량 등록 요청 3건 대기 중</div></div><div class="req-arrow">→</div></div>
+    <div class="scroll">
+      <div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-reg"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">12가 3456</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-reg">등록</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">101동 302호</div><div class="vmeta-dot"></div><div class="vmeta-item">현대 쏘나타</div><div class="vmeta-dot"></div><div class="vmeta-item">화이트</div></div>
+    <div class="vcard-sub">등록일 2025.01.15</div>
+  </div>
+</div>
+    </div>
+    <div class="bnav"><button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button><button class="nav-item"><div class="nav-icon">📷</div><span>스캔</span></button><button class="nav-item on"><div class="nav-badge">3</div><div class="nav-icon">🚗</div><span>차량관리</span></button><button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button><button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button></div>
+    <div class="sheet-overlay D open" onclick="">
+      <div class="sheet-panel D" style="transform:translateY(0)" onclick="event.stopPropagation()">
+        <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+        <div class="sheet-scroll">
+          <div class="sheet-top">
+            <div><div class="sheet-plate">12가 3456</div></div>
+            <div style="display:flex;align-items:center;gap:8px"><div class="sheet-badge badge-reg">등록</div><button class="sheet-close">✕</button></div>
+          </div>
+          <div class="sheet-section"><div class="sheet-sec-title">차량 정보</div>
+            <div class="info-grid">
+              <div class="info-item"><div class="info-lbl">동·호수</div><div class="info-val">101동 302호</div></div>
+              <div class="info-item"><div class="info-lbl">등록일</div><div class="info-val">2025.01.15</div></div>
+              <div class="info-item"><div class="info-lbl">차종</div><div class="info-val">현대 쏘나타</div></div>
+              <div class="info-item"><div class="info-lbl">색상</div><div class="info-val">화이트</div></div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="sheet-section"><div class="sheet-sec-title">차주 연락처</div>
+            <div class="contact-row">
+              <div class="contact-info"><div class="contact-name">김○○</div><div class="contact-num">010-9876-5432</div></div>
+              <div class="contact-btns"><button class="c-btn c-btn-call">📞</button><button class="c-btn c-btn-sms">💬</button></div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="sheet-section"><div class="sheet-sec-title">정보 수정</div>
+            <div class="edit-field"><div class="edit-label">차량 번호</div><input class="edit-input" type="text" value="12가 3456"></div>
+            <div class="edit-field"><div class="edit-label">차종</div><input class="edit-input" type="text" value="현대 쏘나타"></div>
+            <div class="edit-field"><div class="edit-label">색상</div><input class="edit-input" type="text" value="화이트"></div>
+            <div class="edit-field"><div class="edit-label">메모</div><input class="edit-input" type="text" placeholder="특이사항 입력"></div>
+          </div>
+        </div>
+        <div class="sheet-btns"><button class="s-btn s-btn-del">삭제</button><button class="s-btn s-btn-save">저장</button></div>
+      </div>
+    </div>
+  </div>
+</div></div></div><div class="pw"><div class="plabel">8. 방문차량 상세 시트 (Light)</div>
+<div class="phone lt"><div class="screen-stack">
+  <div class="screen L active">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr"><div class="hdr-title">차량관리</div><button class="hamburger-btn"><div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div></button></div>
+    <div class="search-wrap"><div class="search-inner"><span class="search-icon">🔍</span><input class="search-input" placeholder="번호판, 동호수 검색"></div></div>
+    <div class="filter-tabs"><button class="ftab">전체 <span style="opacity:.6">24</span></button><button class="ftab f-reg">등록 <span style="opacity:.6">18</span></button><button class="ftab on f-vis">방문 <span style="opacity:.6">4</span></button><button class="ftab f-unr">미등록 <span style="opacity:.6">2</span></button></div>
+    <div class="scroll">
+      <div class="vcard" onclick="openSheet('ov_dummy','sh_dummy')">
+  <div class="vcard-bar bar-exp"></div>
+  <div class="vcard-body">
+    <div class="vcard-top"><div class="vcard-plate">77라 9012</div><div class="vcard-right"><button class="card-call-btn" onclick="event.stopPropagation()">📞</button><div class="vcard-badge badge-exp">만료</div></div></div>
+    <div class="vcard-meta"><div class="vmeta-item">203동 1501호 방문</div><div class="vmeta-dot"></div><div class="vmeta-item">일반방문</div></div>
+    <div class="vcard-sub" style="color:#E74C3C">만료 2026.05.13 18:00</div>
+  </div>
+</div>
+    </div>
+    <div class="bnav"><button class="nav-item"><div class="nav-icon">🏠</div><span>홈</span></button><button class="nav-item"><div class="nav-icon">📷</div><span>스캔</span></button><button class="nav-item on"><div class="nav-badge">3</div><div class="nav-icon">🚗</div><span>차량관리</span></button><button class="nav-item"><div class="nav-icon">🏢</div><span>단지관리</span></button><button class="nav-item"><div class="nav-icon">💬</div><span>소통</span></button></div>
+    <div class="sheet-overlay L open" onclick="">
+      <div class="sheet-panel L" style="transform:translateY(0)" onclick="event.stopPropagation()">
+        <div class="sheet-handle-wrap"><div class="sheet-handle"></div></div>
+        <div class="sheet-scroll">
+          <div class="sheet-top">
+            <div><div class="sheet-plate">77라 9012</div></div>
+            <div style="display:flex;align-items:center;gap:8px"><div class="sheet-badge badge-exp">만료</div><button class="sheet-close">✕</button></div>
+          </div>
+          <div class="sheet-section"><div class="sheet-sec-title">방문 정보</div>
+            <div class="info-grid">
+              <div class="info-item"><div class="info-lbl">방문 동·호수</div><div class="info-val">203동 1501호</div></div>
+              <div class="info-item"><div class="info-lbl">방문 목적</div><div class="info-val">일반방문</div></div>
+              <div class="info-item"><div class="info-lbl">허가 상태</div><div class="info-val" style="color:#E74C3C">만료됨</div></div>
+              <div class="info-item"><div class="info-lbl">만료일시</div><div class="info-val">2026.05.13 18:00</div></div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="sheet-section"><div class="sheet-sec-title">차주 연락처</div>
+            <div class="contact-row">
+              <div class="contact-info"><div class="contact-name">방문자</div><div class="contact-num">010-1234-5678</div></div>
+              <div class="contact-btns"><button class="c-btn c-btn-call">📞</button><button class="c-btn c-btn-sms">💬</button></div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="sheet-section"><div class="sheet-sec-title">기간 연장</div>
+            <div class="chip-row"><button class="chip">+1일</button><button class="chip">+2일</button><button class="chip on">직접지정</button></div>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <input class="edit-input" type="date" value="2026-05-16" style="flex:1;font-size:11px">
+              <input class="edit-input" type="time" value="18:00" style="flex:1;font-size:11px">
+            </div>
+          </div>
+        </div>
+        <div class="sheet-btns"><button class="s-btn s-btn-del">삭제</button><button class="s-btn s-btn-save">기간 연장</button></div>
+      </div>
+    </div>
+  </div>
+</div></div></div></div>
+
+<script>
+function slideIn(frontId,mainId){
+  document.getElementById(mainId).classList.replace('active','behind');
+  document.getElementById(frontId).classList.replace('front','active');
+}
+function slideOut(frontId,mainId){
+  document.getElementById(frontId).classList.replace('active','front');
+  document.getElementById(mainId).classList.replace('behind','active');
+}
+function openSheet(ovId,shId){
+  var ov=document.getElementById(ovId);
+  if(!ov)return;
+  ov.querySelectorAll('.sheet-panel').forEach(function(p){p.style.display='none';});
+  var sh=document.getElementById(shId);
+  if(sh){sh.style.display='flex';}
+  ov.classList.add('open');
+}
+function closeSheet(ovId){
+  var ov=document.getElementById(ovId);
+  if(ov){ov.classList.remove('open');}
+}
+function bgClose(e,ovId){
+  if(e.target===document.getElementById(ovId)){closeSheet(ovId);}
+}
+var _drag={};
+function startDrag(e,shId,ovId){
+  _drag={active:true,startY:e.clientY,shId:shId,ovId:ovId};
+  document.addEventListener('mousemove',onDrag);
+  document.addEventListener('mouseup',endDrag);
+}
+function startDragT(e,shId,ovId){
+  _drag={active:true,startY:e.touches[0].clientY,shId:shId,ovId:ovId};
+  document.addEventListener('touchmove',onDragT);
+  document.addEventListener('touchend',endDrag);
+}
+function onDrag(e){if(!_drag.active)return;var dy=e.clientY-_drag.startY;if(dy>60){closeSheet(_drag.ovId);endDrag();}}
+function onDragT(e){if(!_drag.active)return;var dy=e.touches[0].clientY-_drag.startY;if(dy>60){closeSheet(_drag.ovId);endDrag();}}
+function endDrag(){_drag.active=false;document.removeEventListener('mousemove',onDrag);document.removeEventListener('mouseup',endDrag);document.removeEventListener('touchmove',onDragT);document.removeEventListener('touchend',endDrag);}
+</script>
+</body>
+</html>

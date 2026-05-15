@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkingOwner — 홈 v5</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans','Noto Sans KR',sans-serif;background:#0a0f18;
+  display:flex;flex-direction:column;align-items:center;padding:32px 20px 80px;gap:12px;}
+
+h2{color:#D8E8F5;font-size:15px;font-weight:700;text-align:center;letter-spacing:.5px;margin-top:36px;}
+.note{color:#7890A8;font-size:11px;text-align:center;line-height:1.7;}
+.phones-row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start;}
+.pw{display:flex;flex-direction:column;align-items:center;gap:8px;}
+.plabel{color:#9CA3AF;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+
+.phone{width:320px;height:680px;background:#080808;border-radius:48px;padding:12px;
+  box-shadow:0 0 0 1px #1e1e1e,0 0 0 3px #080808,0 28px 70px rgba(0,0,0,.85),
+  inset 0 1px 0 rgba(255,255,255,.06);position:relative;flex-shrink:0;}
+.phone::before{content:'';position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  width:98px;height:28px;background:#000;border-radius:16px;z-index:10;}
+.ps{width:100%;height:100%;border-radius:38px;overflow:hidden;display:flex;flex-direction:column;position:relative;}
+
+.L{background:#F0F4F9;}
+.D{background:#0C1520;}
+
+.sbar{height:44px;flex-shrink:0;display:flex;align-items:flex-end;
+  justify-content:space-between;padding:0 18px 6px;font-size:10px;font-weight:700;}
+.L .sbar{color:#162035;} .D .sbar{color:#D8E8F5;}
+.sbar-r{display:flex;gap:4px;align-items:center;}
+
+.hdr{flex-shrink:0;padding:8px 16px 12px;display:flex;align-items:center;justify-content:space-between;}
+.L .hdr{background:#1B3D6F;}
+.D .hdr{background:#142030;border-bottom:1px solid rgba(74,144,200,.12);}
+.hdr-left{display:flex;flex-direction:column;gap:2px;}
+.hdr-title{color:#fff;font-size:15px;font-weight:700;}
+.D .hdr-title{color:#D8E8F5;}
+.hdr-complex{color:rgba(255,255,255,.65);font-size:11px;display:flex;align-items:center;gap:4px;}
+.D .hdr-complex{color:#7890A8;}
+.role-badge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:700;
+  background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25);}
+.D .role-badge{background:rgba(74,144,200,.15);color:#4A90C8;border-color:rgba(74,144,200,.3);}
+
+.hamburger-btn{width:36px;height:36px;border-radius:10px;border:none;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  background:rgba(255,255,255,.15);flex-shrink:0;padding:0;}
+.D .hamburger-btn{background:rgba(74,144,200,.12);}
+.hb-line{width:16px;height:2px;border-radius:1px;background:#fff;}
+.D .hb-line{background:#D8E8F5;}
+
+.scroll{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:12px;}
+.scroll::-webkit-scrollbar{display:none;}
+
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;}
+.sec-title{font-size:12px;font-weight:700;}
+.L .sec-title{color:#162035;} .D .sec-title{color:#D8E8F5;}
+.sec-more{font-size:10px;background:none;border:none;cursor:pointer;font-family:inherit;padding:0;color:#4A90C8;}
+
+/* 통계 그리드 */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-card{border-radius:14px;padding:13px 14px;display:flex;flex-direction:column;gap:5px;position:relative;overflow:hidden;}
+.L .stat-card{background:#fff;box-shadow:0 2px 8px rgba(27,61,111,.07);}
+.D .stat-card{background:#142030;}
+.stat-card-icon{font-size:20px;position:absolute;top:12px;right:12px;opacity:.2;}
+.stat-lbl{font-size:10px;}
+.L .stat-lbl{color:#607080;} .D .stat-lbl{color:#7890A8;}
+.stat-val{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;}
+.stat-badge{font-size:9px;padding:3px 8px;border-radius:20px;font-weight:700;width:fit-content;margin-top:2px;}
+.c-reg{color:#2ECC71!important;} .c-vis{color:#F1C40F!important;}
+.c-unr{color:#E74C3C!important;} .c-acc{color:#4A90C8!important;}
+.bg-reg{background:rgba(46,204,113,.13);color:#27ae60;}
+.bg-vis{background:rgba(241,196,15,.13);color:#b8960a;}
+.bg-unr{background:rgba(231,76,60,.13);color:#c0392b;}
+.bg-acc{background:rgba(74,144,200,.13);color:#2D6098;}
+.D .bg-acc{color:#4A90C8;}
+.slot-bar-wrap{height:5px;border-radius:3px;overflow:hidden;margin-top:4px;}
+.L .slot-bar-wrap{background:rgba(27,61,111,.1);}
+.D .slot-bar-wrap{background:rgba(74,144,200,.12);}
+.slot-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,#1B3D6F,#4A90C8);}
+.D .slot-bar{background:linear-gradient(90deg,#2D6098,#78B8E8);}
+.slot-info{display:flex;justify-content:space-between;margin-top:3px;}
+.slot-used{font-size:9px;font-weight:700;}
+.L .slot-used{color:#1B3D6F;} .D .slot-used{color:#4A90C8;}
+.slot-total{font-size:9px;}
+.L .slot-total{color:#607080;} .D .slot-total{color:#7890A8;}
+
+.alert-banner{border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:10px;
+  background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.25);}
+.alert-icon{font-size:20px;flex-shrink:0;}
+.alert-body{flex:1;}
+.alert-title{font-size:11px;font-weight:700;color:#E74C3C;}
+.alert-desc{font-size:10px;margin-top:2px;}
+.L .alert-desc{color:#607080;} .D .alert-desc{color:#7890A8;}
+.alert-action{font-size:10px;font-weight:700;color:#E74C3C;background:none;border:none;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;}
+
+/* 새로운 할 일 요약 (차량관리 / 단지관리 매핑) */
+.todo-row{display:flex;gap:8px;}
+.todo-card{flex:1;border-radius:12px;padding:12px;display:flex;align-items:center;gap:10px;cursor:pointer;position:relative;}
+.L .todo-card{background:#fff;box-shadow:0 2px 8px rgba(27,61,111,.07);}
+.D .todo-card{background:#142030;}
+.todo-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.todo-info{flex:1;display:flex;flex-direction:column;gap:2px;}
+.todo-title{font-size:10px;font-weight:700;}
+.L .todo-title{color:#607080;} .D .todo-title{color:#7890A8;}
+.todo-val{font-size:16px;font-weight:700;}
+.L .todo-val{color:#162035;} .D .todo-val{color:#D8E8F5;}
+.todo-arrow{font-size:12px;}
+.L .todo-arrow{color:#9CA3AF;} .D .todo-arrow{color:#607080;}
+.todo-dot{position:absolute;top:10px;right:10px;width:6px;height:6px;border-radius:50%;background:#E74C3C;}
+
+.feed-list{display:flex;flex-direction:column;gap:6px;}
+.feed-item{border-radius:11px;padding:10px 12px;display:flex;align-items:center;gap:10px;}
+.L .feed-item{background:#fff;box-shadow:0 1px 5px rgba(27,61,111,.06);}
+.D .feed-item{background:#142030;}
+.feed-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.feed-info{flex:1;min-width:0;}
+.feed-plate{font-size:13px;font-weight:700;letter-spacing:1.5px;font-variant-numeric:tabular-nums;}
+.L .feed-plate{color:#162035;} .D .feed-plate{color:#D8E8F5;}
+.feed-meta{font-size:10px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.L .feed-meta{color:#607080;} .D .feed-meta{color:#7890A8;}
+.feed-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+.feed-time{font-size:10px;font-variant-numeric:tabular-nums;}
+.L .feed-time{color:#607080;} .D .feed-time{color:#7890A8;}
+.feed-badge{font-size:9px;padding:2px 7px;border-radius:20px;font-weight:700;}
+
+/* 탭바 (새로운 5개 구성) */
+.bnav{height:62px;flex-shrink:0;display:flex;align-items:center;justify-content:space-around;padding:0 4px 6px;}
+.L .bnav{background:#fff;border-top:1px solid rgba(27,61,111,.1);}
+.D .bnav{background:#142030;border-top:1px solid rgba(74,144,200,.1);}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+  padding:5px 8px;border-radius:10px;font-size:9px;font-weight:400;
+  border:none;background:transparent;font-family:inherit;position:relative;flex:1;}
+.nav-icon{font-size:18px;line-height:1;}
+.L .nav-item{color:#607080;}
+.L .nav-item.on{color:#1B3D6F;font-weight:700;}
+.L .nav-item.on .nav-icon{transform:scale(1.1);transition:transform .2s;}
+.D .nav-item{color:#7890A8;}
+.D .nav-item.on{color:#4A90C8;font-weight:700;}
+.D .nav-item.on .nav-icon{transform:scale(1.1);transition:transform .2s;}
+.tab-badge{position:absolute;top:2px;right:12px;background:#E74C3C;color:#fff;
+  font-size:8px;font-weight:700;min-width:14px;height:14px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;padding:0 3px;border:2px solid;}
+.L .tab-badge{border-color:#fff;}
+.D .tab-badge{border-color:#142030;}
+</style>
+</head>
+<body>
+
+<h2>🏠 홈 대시보드 v5</h2>
+<div class="note">하단 탭바 재구성 (홈/스캔/차량관리/단지관리/소통) · 홈 화면 요약 연동</div>
+
+<div class="phones-row">
+
+  <!-- ══ Light ══ -->
+  <div class="pw"><div class="plabel">☀️ Light — 단지관리자</div>
+  <div class="phone"><div class="ps L">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-left">
+        <div class="hdr-title">ParkingOwner</div>
+        <div class="hdr-complex">🏢 현대아파트 · <span class="role-badge">단지관리자</span></div>
+      </div>
+      <button class="hamburger-btn">
+        <div class="hb-line"></div><div class="hb-line"></div><div class="hb-line"></div>
+      </button>
+    </div>
+    
+    <div class="scroll">
+      <!-- 실시간 현황 (기존 요약 통합) -->
+      <div class="sec-hdr"><div class="sec-title">실시간 현황</div><button class="sec-more">전체 보기 ›</button></div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-card-icon">🚗</div><div class="stat-lbl">오늘 입/출차</div>
+          <div class="stat-val c-reg">38 <span style="font-size:14px;color:#9CA3AF;font-weight:400;">/ 31</span></div>
+          <div class="stat-badge bg-reg">정상 운영</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">🔑</div><div class="stat-lbl">방문 차량</div>
+          <div class="stat-val c-vis">7</div>
+          <div class="stat-badge bg-vis">입차 중</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">⚠️</div><div class="stat-lbl">미등록 감지</div>
+          <div class="stat-val c-unr">2</div>
+          <div class="stat-badge bg-unr">경보 발생</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon">🅿️</div><div class="stat-lbl">전체 슬롯</div>
+          <div class="stat-val" style="color:#1B3D6F;">80</div>
+          <div class="slot-bar-wrap"><div class="slot-bar" style="width:64%;"></div></div>
+          <div class="slot-info"><span class="slot-used">51 사용 중</span><span class="slot-total">/ 80</span></div>
+        </div>
+      </div>
+
+      <!-- 긴급 알림 -->
+      <div class="alert-banner">
+        <div class="alert-icon">🚨</div>
+        <div class="alert-body"><div class="alert-title">미등록 차량 감지</div><div class="alert-desc">55다 1234 · B2 구역 · 방금 전</div></div>
+        <button class="alert-action">처리 →</button>
+      </div>
+
+      <!-- 할 일 요약 (새로운 탭 구조에 맞춤) -->
+      <div class="sec-hdr"><div class="sec-title">승인 대기 요청</div></div>
+      <div class="todo-row">
+        <!-- 차량 관리 탭으로 연결 -->
+        <div class="todo-card">
+          <div class="todo-dot"></div>
+          <div class="todo-icon bg-vis">🚗</div>
+          <div class="todo-info">
+            <div class="todo-title">차량 등록 요청</div>
+            <div class="todo-val">5<span style="font-size:11px;font-weight:400;">건</span></div>
+          </div>
+          <div class="todo-arrow">›</div>
+        </div>
+        <!-- 단지 관리 탭으로 연결 -->
+        <div class="todo-card">
+          <div class="todo-dot"></div>
+          <div class="todo-icon bg-acc">👤</div>
+          <div class="todo-info">
+            <div class="todo-title">세대원 가입 요청</div>
+            <div class="todo-val">3<span style="font-size:11px;font-weight:400;">건</span></div>
+          </div>
+          <div class="todo-arrow">›</div>
+        </div>
+      </div>
+
+      <!-- 최근 입출차 -->
+      <div class="sec-hdr"><div class="sec-title">최근 입출차</div><button class="sec-more">전체 보기 ›</button></div>
+      <div class="feed-list">
+        <div class="feed-item"><div class="feed-dot" style="background:#2ECC71;"></div><div class="feed-info"><div class="feed-plate">12가 3456</div><div class="feed-meta">홍길동 · 101동 302호 · 소나타</div></div><div class="feed-right"><div class="feed-time">13:41</div><div class="feed-badge bg-reg">입차</div></div></div>
+        <div class="feed-item"><div class="feed-dot" style="background:#F1C40F;"></div><div class="feed-info"><div class="feed-plate">98나 7654</div><div class="feed-meta">방문차량 · 102동 · 그랜저</div></div><div class="feed-right"><div class="feed-time">13:38</div><div class="feed-badge bg-vis">입차</div></div></div>
+        <div class="feed-item"><div class="feed-dot" style="background:#E74C3C;"></div><div class="feed-info"><div class="feed-plate">55다 1234</div><div class="feed-meta">미등록 · B2 구역 감지</div></div><div class="feed-right"><div class="feed-time">13:22</div><div class="feed-badge bg-unr">경보</div></div></div>
+      </div>
+    </div>
+
+    <!-- 새로운 5개 탭바 구성 -->
+    <div class="bnav">
+      <button class="nav-item on L"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item L"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item L"><div class="nav-icon">🚗</div><span>차량관리</span><div class="tab-badge L">5</div></button>
+      <button class="nav-item L"><div class="nav-icon">🏢</div><span>단지관리</span><div class="tab-badge L">3</div></button>
+      <button class="nav-item L"><div class="nav-icon">💬</div><span>소통</span><div class="tab-badge L">1</div></button>
+    </div>
+  </div></div></div>
+
+  <!-- ══ Dark ══ -->
+  <div class="pw"><div class="plabel">🌙 Dark — 단지관리자</div>
+  <div class="phone"><div class="ps D">
+    <div class="sbar"><span>9:41</span><div class="sbar-r"><span>●●●</span><span>🔋</span></div></div>
+    <div class="hdr">
+      <div class="hdr-left">
+        <div class="hdr-title">ParkingOwner</div>
+        <div class="hdr-complex">🏢 현대아파트 · <span class="role-badge D">단지관리자</span></div>
+      </div>
+      <button class="hamburger-btn D">
+        <div class="hb-line D"></div><div class="hb-line D"></div><div class="hb-line D"></div>
+      </button>
+    </div>
+    
+    <div class="scroll">
+      <div class="sec-hdr"><div class="sec-title">실시간 현황</div><button class="sec-more">전체 보기 ›</button></div>
+      <div class="stat-grid">
+        <div class="stat-card D">
+          <div class="stat-card-icon">🚗</div><div class="stat-lbl">오늘 입/출차</div>
+          <div class="stat-val c-reg">38 <span style="font-size:14px;color:#607080;font-weight:400;">/ 31</span></div>
+          <div class="stat-badge bg-reg">정상 운영</div>
+        </div>
+        <div class="stat-card D">
+          <div class="stat-card-icon">🔑</div><div class="stat-lbl">방문 차량</div>
+          <div class="stat-val c-vis">7</div>
+          <div class="stat-badge bg-vis">입차 중</div>
+        </div>
+        <div class="stat-card D">
+          <div class="stat-card-icon">⚠️</div><div class="stat-lbl">미등록 감지</div>
+          <div class="stat-val c-unr">2</div>
+          <div class="stat-badge bg-unr">경보 발생</div>
+        </div>
+        <div class="stat-card D">
+          <div class="stat-card-icon">🅿️</div><div class="stat-lbl">전체 슬롯</div>
+          <div class="stat-val c-acc">80</div>
+          <div class="slot-bar-wrap D"><div class="slot-bar D" style="width:64%;"></div></div>
+          <div class="slot-info"><span class="slot-used D">51 사용 중</span><span class="slot-total">/ 80</span></div>
+        </div>
+      </div>
+
+      <div class="alert-banner">
+        <div class="alert-icon">🚨</div>
+        <div class="alert-body"><div class="alert-title">미등록 차량 감지</div><div class="alert-desc">55다 1234 · B2 구역 · 방금 전</div></div>
+        <button class="alert-action">처리 →</button>
+      </div>
+
+      <div class="sec-hdr"><div class="sec-title">승인 대기 요청</div></div>
+      <div class="todo-row">
+        <div class="todo-card D">
+          <div class="todo-dot"></div>
+          <div class="todo-icon bg-vis">🚗</div>
+          <div class="todo-info">
+            <div class="todo-title">차량 등록 요청</div>
+            <div class="todo-val">5<span style="font-size:11px;font-weight:400;">건</span></div>
+          </div>
+          <div class="todo-arrow">›</div>
+        </div>
+        <div class="todo-card D">
+          <div class="todo-dot"></div>
+          <div class="todo-icon bg-acc">👤</div>
+          <div class="todo-info">
+            <div class="todo-title">세대원 가입 요청</div>
+            <div class="todo-val">3<span style="font-size:11px;font-weight:400;">건</span></div>
+          </div>
+          <div class="todo-arrow">›</div>
+        </div>
+      </div>
+
+      <div class="sec-hdr"><div class="sec-title">최근 입출차</div><button class="sec-more">전체 보기 ›</button></div>
+      <div class="feed-list">
+        <div class="feed-item D"><div class="feed-dot" style="background:#2ECC71;"></div><div class="feed-info"><div class="feed-plate">12가 3456</div><div class="feed-meta">홍길동 · 101동 302호 · 소나타</div></div><div class="feed-right"><div class="feed-time">13:41</div><div class="feed-badge bg-reg">입차</div></div></div>
+        <div class="feed-item D"><div class="feed-dot" style="background:#F1C40F;"></div><div class="feed-info"><div class="feed-plate">98나 7654</div><div class="feed-meta">방문차량 · 102동 · 그랜저</div></div><div class="feed-right"><div class="feed-time">13:38</div><div class="feed-badge bg-vis">입차</div></div></div>
+        <div class="feed-item D"><div class="feed-dot" style="background:#E74C3C;"></div><div class="feed-info"><div class="feed-plate">55다 1234</div><div class="feed-meta">미등록 · B2 구역 감지</div></div><div class="feed-right"><div class="feed-time">13:22</div><div class="feed-badge bg-unr">경보</div></div></div>
+      </div>
+    </div>
+
+    <div class="bnav">
+      <button class="nav-item on D"><div class="nav-icon">🏠</div><span>홈</span></button>
+      <button class="nav-item D"><div class="nav-icon">📷</div><span>스캔</span></button>
+      <button class="nav-item D"><div class="nav-icon">🚗</div><span>차량관리</span><div class="tab-badge D">5</div></button>
+      <button class="nav-item D"><div class="nav-icon">🏢</div><span>단지관리</span><div class="tab-badge D">3</div></button>
+      <button class="nav-item D"><div class="nav-icon">💬</div><span>소통</span><div class="tab-badge D">1</div></button>
+    </div>
+  </div></div></div>
+
+</div>
+</body>
+</html>
