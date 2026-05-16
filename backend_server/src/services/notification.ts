@@ -1,4 +1,4 @@
-import type { PrismaClient, NotificationType } from "@prisma/client";
+import type { Prisma, PrismaClient, NotificationType } from "@prisma/client";
 import { sendPushNotificationToMany, sendPushNotification } from "./fcm.js";
 
 interface NotificationPayload {
@@ -25,7 +25,7 @@ export async function sendNotificationToUser(
       type: payload.type,
       title: payload.title,
       body: payload.body,
-      data: payload.data ?? {},
+      data: (payload.data ?? {}) as Prisma.InputJsonValue,
     },
   });
 
@@ -66,7 +66,7 @@ export async function sendNotificationToComplexManagers(
       type: payload.type,
       title: payload.title,
       body: payload.body,
-      data: payload.data ?? {},
+      data: (payload.data ?? {}) as Prisma.InputJsonValue,
     })),
   });
 

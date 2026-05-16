@@ -1,5 +1,9 @@
 import Fastify from "fastify";
+import type { FastifyError } from "fastify";
 import fastifyRateLimit from "@fastify/rate-limit";
+import fastifyStatic from "@fastify/static";
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 
 import prismaPlugin from "./plugins/prisma.js";
 import jwtPlugin from "./plugins/jwt.js";
@@ -15,6 +19,7 @@ import parkingZoneRoutes from "./routes/parking-zones.js";
 import channelRoutes from "./routes/channels.js";
 import notificationRoutes from "./routes/notifications.js";
 import ocrRoutes from "./routes/ocr.js";
+import userRoutes from "./routes/users.js";
 import devRoutes from "./routes/dev.js";
 import { config } from "./config/index.js";
 
@@ -36,6 +41,12 @@ export async function buildApp() {
     max: 200,
     timeWindow: "1 minute",
   });
+  const uploadsDir = join(process.cwd(), "uploads");
+  await mkdir(uploadsDir, { recursive: true });
+  await app.register(fastifyStatic, {
+    root: uploadsDir,
+    prefix: "/uploads/",
+  });
 
   // ── Health check ─────────────────────────────────────────────────────────
   app.get("/health", async () => ({ status: "ok", timestamp: new Date().toISOString() }));
@@ -53,13 +64,14 @@ export async function buildApp() {
   app.register(channelRoutes, { prefix: `${API_PREFIX}/channels` });
   app.register(notificationRoutes, { prefix: `${API_PREFIX}/notifications` });
   app.register(ocrRoutes, { prefix: `${API_PREFIX}/ocr` });
+  app.register(userRoutes, { prefix: `${API_PREFIX}/users` });
 
   if (config.NODE_ENV !== "production") {
     app.register(devRoutes, { prefix: `${API_PREFIX}/dev` });
   }
 
   // ── Global error handler ─────────────────────────────────────────────────
-  app.setErrorHandler((error, _req, reply) => {
+  app.setErrorHandler((error: FastifyError, _req, reply) => {
     app.log.error(error);
     const statusCode = error.statusCode ?? 500;
     reply.code(statusCode).send({

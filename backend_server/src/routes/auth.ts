@@ -170,6 +170,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        profileImageUrl: user.profileImageUrl,
         role: primaryMember?.role ?? "RESIDENT",
         complexId: primaryMember?.complexId ?? null,
       },
@@ -288,6 +289,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       name: user.name,
       email: user.email,
       phone: user.phone,
+      profileImageUrl: user.profileImageUrl,
       emailVerified: user.emailVerified,
       complexMembers: user.complexMembers.map((m) => ({
         complexId: m.complexId,

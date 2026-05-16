@@ -62,6 +62,7 @@ services:
       - "3000:3000"
     volumes:
       - ./firebase-service-account.json:/app/firebase-service-account.json:ro
+      - ./uploads:/app/uploads
 
 volumes:
   db_data:

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../features/auth/providers/auth_provider.dart';
 import '../../shared/models/app_state.dart';
+import 'user_avatar.dart';
 
 class AppDrawer extends ConsumerWidget {
   const AppDrawer({super.key});
@@ -11,7 +13,15 @@ class AppDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.surfaceDark : Colors.white;
-    final headerBg = isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
+    final headerBg = isDark
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
+    final user = ref.watch(authNotifierProvider).valueOrNull;
+    final name = user?.name ?? '최현우';
+    final complexName = user?.complexName.isNotEmpty == true
+        ? user!.complexName
+        : '행복마을아파트';
+    final roleName = _roleName(user?.role);
     // GoRouter 인스턴스를 미리 캡처한다.
     // Drawer pop 이후 context가 detach되어도 router는 유효하다.
     final router = GoRouter.of(context);
@@ -50,7 +60,9 @@ class AppDrawer extends ConsumerWidget {
                           '✕',
                           style: TextStyle(
                             fontSize: 16,
-                            color: isDark ? AppColors.subtextDark : AppColors.subtextLight,
+                            color: isDark
+                                ? AppColors.subtextDark
+                                : AppColors.subtextLight,
                           ),
                         ),
                       ),
@@ -62,44 +74,71 @@ class AppDrawer extends ConsumerWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    UserAvatar(
+                      name: name,
+                      profileImageUrl: user?.profileImageUrl,
+                      size: 46,
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '최현우 님',
+                            '$name 님',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? AppColors.textDark : AppColors.textLight,
+                              color: isDark
+                                  ? AppColors.textDark
+                                  : AppColors.textLight,
                             ),
                           ),
                           const SizedBox(height: 4),
                           // 단지 + 역할 배지
                           Row(
                             children: [
+                              Icon(
+                                Icons.apartment_rounded,
+                                size: 13,
+                                color: isDark
+                                    ? AppColors.subtextDark
+                                    : AppColors.subtextLight,
+                              ),
+                              const SizedBox(width: 3),
                               Text(
-                                '🏢 행복마을아파트',
+                                complexName,
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color: isDark ? AppColors.subtextDark : AppColors.subtextLight,
+                                  color: isDark
+                                      ? AppColors.subtextDark
+                                      : AppColors.subtextLight,
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: isDark
-                                      ? const Color(0xFF4A90C8).withValues(alpha: 0.15)
-                                      : AppColors.primaryLight.withValues(alpha: 0.1),
+                                      ? const Color(
+                                          0xFF4A90C8,
+                                        ).withValues(alpha: 0.15)
+                                      : AppColors.primaryLight.withValues(
+                                          alpha: 0.1,
+                                        ),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  '단지 관리자',
+                                  roleName,
                                   style: TextStyle(
                                     fontSize: 9,
                                     fontWeight: FontWeight.w700,
-                                    color: isDark ? AppColors.primaryDark : AppColors.primaryLight,
+                                    color: isDark
+                                        ? AppColors.primaryDark
+                                        : AppColors.primaryLight,
                                   ),
                                 ),
                               ),
@@ -121,8 +160,12 @@ class AppDrawer extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
-                          isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                          color: isDark ? AppColors.primaryDark : AppColors.primaryLight,
+                          isDark
+                              ? Icons.light_mode_rounded
+                              : Icons.dark_mode_rounded,
+                          color: isDark
+                              ? AppColors.primaryDark
+                              : AppColors.primaryLight,
                           size: 18,
                         ),
                       ),
@@ -197,20 +240,22 @@ class AppDrawer extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
+                  onTap: () async {
+                    Navigator.of(context).pop();
+                    await ref.read(authNotifierProvider.notifier).logout();
+                  },
                   child: Row(
                     children: [
-                      Text(
-                        '🚪',
-                        style: const TextStyle(fontSize: 14),
-                      ),
+                      Text('🚪', style: const TextStyle(fontSize: 14)),
                       const SizedBox(width: 6),
                       Text(
                         '로그아웃',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? AppColors.subtextDark : AppColors.subtextLight,
+                          color: isDark
+                              ? AppColors.subtextDark
+                              : AppColors.subtextLight,
                         ),
                       ),
                     ],
@@ -220,7 +265,9 @@ class AppDrawer extends ConsumerWidget {
                   'v1.0.0',
                   style: TextStyle(
                     fontSize: 10,
-                    color: isDark ? AppColors.subtextDark.withValues(alpha: 0.7) : const Color(0xFF9CA3AF),
+                    color: isDark
+                        ? AppColors.subtextDark.withValues(alpha: 0.7)
+                        : const Color(0xFF9CA3AF),
                   ),
                 ),
               ],
@@ -229,6 +276,21 @@ class AppDrawer extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  static String _roleName(UserRole? role) {
+    switch (role) {
+      case UserRole.appAdmin:
+        return '앱 관리자';
+      case UserRole.complexManager:
+        return '단지 관리자';
+      case UserRole.attendant:
+        return '주차 관리원';
+      case UserRole.resident:
+        return '세대원';
+      case null:
+        return '단지 관리자';
+    }
   }
 }
 
@@ -285,7 +347,11 @@ class _DrawerItem extends StatelessWidget {
             children: [
               SizedBox(
                 width: 24,
-                child: Text(emoji, style: const TextStyle(fontSize: 18), textAlign: TextAlign.center),
+                child: Text(
+                  emoji,
+                  style: const TextStyle(fontSize: 18),
+                  textAlign: TextAlign.center,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -302,7 +368,9 @@ class _DrawerItem extends StatelessWidget {
                 '›',
                 style: TextStyle(
                   fontSize: 18,
-                  color: isDark ? const Color(0xFF3A5068) : const Color(0xFFC8D6E5),
+                  color: isDark
+                      ? const Color(0xFF3A5068)
+                      : const Color(0xFFC8D6E5),
                 ),
               ),
             ],

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../shared/models/app_state.dart';
@@ -60,7 +61,29 @@ class AuthNotifier extends AsyncNotifier<UserInfo?> {
     final service = ref.read(authServiceProvider);
     await service.forgotPassword(email);
   }
+
+  Future<void> updateProfileImage(XFile imageFile) async {
+    final currentUser = state.valueOrNull;
+    if (currentUser == null) {
+      throw const ApiException(401, '로그인이 필요합니다.');
+    }
+
+    final storage = ref.read(storageServiceProvider);
+    final tokens = await storage.loadTokens();
+    final accessToken = tokens.accessToken;
+    if (accessToken == null) {
+      throw const ApiException(401, '로그인이 필요합니다.');
+    }
+
+    final service = ref.read(authServiceProvider);
+    final profileImageUrl = await service.uploadProfileImage(
+      accessToken,
+      imageFile,
+    );
+    state = AsyncData(currentUser.copyWith(profileImageUrl: profileImageUrl));
+  }
 }
 
-final authNotifierProvider =
-    AsyncNotifierProvider<AuthNotifier, UserInfo?>(() => AuthNotifier());
+final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, UserInfo?>(
+  () => AuthNotifier(),
+);

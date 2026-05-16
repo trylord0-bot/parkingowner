@@ -1,0 +1,137 @@
+# 프로필 사진 업로드/표시 기능 구현 지시서
+
+## 개요
+
+현재 앱에는 프로필 사진 기능이 없고, 텍스트 아바타만 사용 중이다.  
+이 지시서는 **백엔드(Node.js + Fastify + Prisma + MySQL)** 와 **Flutter 앱(Riverpod)** 양쪽에 프로필 사진 업로드 및 표시 기능을 추가하는 방법을 설명한다.
+
+---
+
+## 1. 백엔드 (`backend_server/`)
+
+### 1-1. Prisma 스키마 수정 (`prisma/schema.prisma`)
+
+- `User` 모델에 `profileImageUrl String?` 필드를 추가한다.
+- 변경 후 `prisma migrate dev` 또는 `prisma db push`로 DB에 반영한다.
+
+### 1-2. 이미지 저장 방식 결정
+
+다음 두 가지 중 하나를 선택한다.
+
+| 방식 | 설명 | 권장 여부 |
+|------|------|-----------|
+| **로컬 파일 저장** | 서버의 `uploads/` 디렉터리에 저장 후 정적 파일로 서빙 | 간단하지만 스케일 어려움 |
+| **외부 스토리지 (S3 등)** | AWS S3 또는 Cloudflare R2에 업로드 후 URL 저장 | 프로덕션 권장 |
+
+> 현재 프로젝트 규모에서는 **로컬 파일 저장**으로 시작해도 무방하다.  
+> `@fastify/multipart`가 이미 `package.json`에 포함되어 있으므로 별도 패키지 추가 없이 사용 가능하다.
+
+### 1-3. 프로필 이미지 업로드 API 추가
+
+- **엔드포인트**: `POST /api/users/me/profile-image`
+- **인증**: Bearer 토큰 필수 (기존 `@fastify/jwt` 미들웨어 재사용)
+- **요청 형식**: `multipart/form-data`, 필드명 `image`
+- **처리 흐름**:
+  1. `@fastify/multipart`로 파일 수신
+  2. 파일 확장자 및 MIME 타입 검증 (jpg, jpeg, png, webp만 허용)
+  3. 파일 크기 제한 적용 (예: 5MB 이하)
+  4. 고유한 파일명 생성 후 저장 (기존 `nanoid` 패키지 활용)
+  5. Prisma로 해당 유저의 `profileImageUrl` 업데이트
+  6. 업데이트된 URL을 응답으로 반환
+- 로컬 저장 시, Fastify의 정적 파일 플러그인(`@fastify/static`)을 추가하여 `uploads/` 폴더를 외부에서 접근 가능하게 설정한다.
+
+### 1-4. `GET /api/auth/me` 응답 수정
+
+- 기존 `auth.ts` 라우트의 `/me` 핸들러에서 Prisma 쿼리 결과에 `profileImageUrl` 필드를 포함하여 반환하도록 수정한다.
+
+### 1-5. 라우트 등록
+
+- `src/routes/` 아래 `users.ts` 파일을 새로 만들거나, 기존 `auth.ts`에 엔드포인트를 추가한다.
+- `app.ts`에서 해당 라우트를 `/api/users` prefix로 등록한다.
+
+---
+
+## 2. Flutter 앱 (`parking_owner_app/`)
+
+### 2-1. `pubspec.yaml` 패키지 추가
+
+다음 두 패키지를 추가한다.
+
+- **`image_picker`**: 갤러리 또는 카메라에서 이미지 선택
+- **`cached_network_image`** (선택): 네트워크 이미지 캐싱 및 로딩 placeholder 처리
+
+### 2-2. `UserInfo` 모델 수정 (`lib/shared/models/app_state.dart`)
+
+- `UserInfo` 클래스에 `profileImageUrl String?` 필드를 추가한다.
+- 기존 생성자 및 사용처에 영향이 없도록 `nullable`로 선언한다.
+
+### 2-3. `AuthService` 수정 (`lib/core/services/auth_service.dart`)
+
+- `me()` 메서드: API 응답 파싱 시 `profileImageUrl` 필드를 `UserInfo`에 포함하도록 수정한다.
+- `uploadProfileImage(String accessToken, File imageFile)` 메서드를 새로 추가한다.
+  - `http.MultipartRequest`를 사용하여 `POST /api/users/me/profile-image`로 전송한다.
+  - 응답으로 받은 새 URL을 반환한다.
+
+### 2-4. `AuthNotifier` 수정 (`lib/features/auth/providers/auth_provider.dart`)
+
+- `updateProfileImage(File imageFile)` 메서드를 추가한다.
+  - `StorageService`에서 `accessToken`을 읽어온다.
+  - `AuthService.uploadProfileImage()`를 호출한다.
+  - 성공 시, 현재 `state`의 `UserInfo`를 `profileImageUrl`이 업데이트된 새 객체로 교체하여 `state`를 갱신한다.
+  - 이렇게 하면 앱 전체에서 프로필 사진이 즉시 반영된다.
+
+### 2-5. 공용 아바타 위젯 생성 (`lib/shared/widgets/user_avatar.dart`)
+
+- `UserAvatar`라는 이름의 재사용 가능한 위젯을 새로 만든다.
+- **로직**:
+  - `profileImageUrl`이 있으면 `CircleAvatar` + `NetworkImage` (또는 `CachedNetworkImage`)로 표시
+  - `profileImageUrl`이 없거나 로딩 실패 시 기존 텍스트 아바타(이름 첫 글자)로 fallback
+- `size` 파라미터를 받아 드로어와 프로필 화면에서 크기를 다르게 사용할 수 있도록 한다.
+
+### 2-6. 프로필 화면 수정 (`lib/features/profile/` 또는 해당 화면 파일)
+
+- 기존 텍스트 아바타를 `UserAvatar` 위젯으로 교체한다.
+- 아바타 위에 카메라 아이콘 버튼(편집 버튼)을 오버레이한다.
+- 버튼 탭 시 동작:
+  1. `image_picker`로 갤러리/카메라 선택 다이얼로그 표시
+  2. 이미지 선택 후 `authNotifierProvider.notifier.updateProfileImage()`를 호출
+  3. 업로드 중에는 로딩 인디케이터 표시
+  4. 성공/실패 시 `SnackBar`로 결과 안내
+
+### 2-7. 드로어 수정 (`lib/shared/widgets/app_drawer.dart` 또는 해당 파일)
+
+- 현재 하드코딩된 사용자 이름과 텍스트 아바타를 `authNotifierProvider`를 watch하여 실제 `UserInfo`로 교체한다.
+- 아바타 부분을 `UserAvatar` 위젯으로 교체한다.
+
+---
+
+## 3. Android / iOS 권한 설정
+
+### Android (`android/app/src/main/AndroidManifest.xml`)
+
+- 갤러리 접근을 위한 `READ_MEDIA_IMAGES` (Android 13+) 또는 `READ_EXTERNAL_STORAGE` 권한을 추가한다.
+- 카메라 사용 시 `CAMERA` 권한도 추가한다.
+
+### iOS (`ios/Runner/Info.plist`)
+
+- `NSPhotoLibraryUsageDescription` 키와 사용 목적 문자열을 추가한다.
+- 카메라 사용 시 `NSCameraUsageDescription` 키도 추가한다.
+
+---
+
+## 4. 구현 순서 (권장)
+
+1. **백엔드 먼저**: 스키마 수정 → 마이그레이션 → API 구현 → 로컬 테스트
+2. **모델/서비스 계층**: `UserInfo` 수정 → `AuthService` 수정 → `AuthNotifier` 수정
+3. **공용 위젯**: `UserAvatar` 위젯 구현
+4. **UI 연결**: 프로필 화면 → 드로어 순서로 적용
+5. **권한 설정**: Android/iOS 권한 추가 후 실기기 테스트
+
+---
+
+## 5. 주의사항
+
+- `UserInfo`는 `const` 생성자를 사용 중이므로, `profileImageUrl` 필드 추가 후 기존 `const UserInfo(...)` 사용처가 있다면 모두 확인한다.
+- 업로드 API의 URL 경로는 백엔드와 Flutter 앱 양쪽에서 일치해야 한다.
+- 로컬 저장 방식 사용 시, Docker 환경에서는 `docker-compose.yml`에 `uploads/` 볼륨 마운트를 추가해야 파일이 컨테이너 재시작 후에도 유지된다.
+- 이미지 URL은 절대 경로(`http://서버주소/uploads/파일명`)로 저장하거나, 앱에서 base URL을 붙여 조합하는 방식 중 하나로 통일한다.

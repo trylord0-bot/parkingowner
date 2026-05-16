@@ -73,6 +73,7 @@ model User {
   name               String
   phone              String?
   fcmToken           String?  // FCM device token for push notifications
+  profileImageUrl    String?
   emailVerified      Boolean  @default(false)
   emailVerifyToken      String?
   emailVerifyExpiresAt  DateTime?

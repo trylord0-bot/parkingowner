@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/models/app_state.dart';
+import '../../../shared/widgets/user_avatar.dart';
 import '../../auth/providers/auth_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -19,7 +21,9 @@ class ProfileScreen extends ConsumerWidget {
     final complexName = user?.complexName ?? '행복마을아파트';
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       body: Column(
         children: [
           _Header(isDark: isDark),
@@ -32,6 +36,7 @@ class ProfileScreen extends ConsumerWidget {
                   name: name,
                   roleName: roleName,
                   complexName: complexName,
+                  profileImageUrl: user?.profileImageUrl,
                 ),
                 const SizedBox(height: 12),
                 _AccountCard(isDark: isDark, email: email),
@@ -75,23 +80,40 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: isDark ? AppColors.surfaceDark : AppColors.primaryLight,
-      padding: EdgeInsets.fromLTRB(4, MediaQuery.of(context).padding.top + 4, 8, 14),
+      padding: EdgeInsets.fromLTRB(
+        4,
+        MediaQuery.of(context).padding.top + 4,
+        8,
+        14,
+      ),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: Colors.white,
+            ),
             padding: EdgeInsets.zero,
           ),
           const Expanded(
             child: Text(
               '내 프로필',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           IconButton(
             onPressed: () {},
-            icon: Icon(Icons.edit_outlined, size: 19, color: Colors.white.withValues(alpha: 0.7)),
+            icon: Icon(
+              Icons.edit_outlined,
+              size: 19,
+              color: Colors.white.withValues(alpha: 0.7),
+            ),
             padding: EdgeInsets.zero,
           ),
           const SizedBox(width: 8),
@@ -123,7 +145,7 @@ class _Card extends StatelessWidget {
                   color: AppColors.primaryLight.withValues(alpha: 0.07),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
-                )
+                ),
               ],
       ),
       child: child,
@@ -154,55 +176,165 @@ class _SectionLabel extends StatelessWidget {
 }
 
 // ── 프로필 히어로 ──────────────────────────────────────────────────────────────
-class _ProfileHero extends StatelessWidget {
+class _ProfileHero extends ConsumerStatefulWidget {
   final bool isDark;
   final String name;
   final String roleName;
   final String complexName;
+  final String? profileImageUrl;
 
   const _ProfileHero({
     required this.isDark,
     required this.name,
     required this.roleName,
     required this.complexName,
+    this.profileImageUrl,
   });
 
   @override
+  ConsumerState<_ProfileHero> createState() => _ProfileHeroState();
+}
+
+class _ProfileHeroState extends ConsumerState<_ProfileHero> {
+  final _picker = ImagePicker();
+  bool _isUploading = false;
+
+  Future<void> _showImageSourceSheet() async {
+    if (_isUploading) return;
+
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: widget.isDark ? AppColors.surfaceDark : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _ImageSourceTile(
+                icon: Icons.photo_library_rounded,
+                label: '갤러리에서 선택',
+                isDark: widget.isDark,
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+              _ImageSourceTile(
+                icon: Icons.photo_camera_rounded,
+                label: '카메라로 촬영',
+                isDark: widget.isDark,
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source == null) return;
+    await _pickAndUpload(source);
+  }
+
+  Future<void> _pickAndUpload(ImageSource source) async {
+    try {
+      final picked = await _picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 88,
+      );
+      if (picked == null) return;
+
+      setState(() => _isUploading = true);
+      await ref.read(authNotifierProvider.notifier).updateProfileImage(picked);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('프로필 사진이 업데이트되었습니다.')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('프로필 사진 업로드에 실패했습니다. $e')));
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final accent = isDark ? AppColors.primaryDark : AppColors.primaryLight;
+    final accent = widget.isDark
+        ? AppColors.primaryDark
+        : AppColors.primaryLight;
     return _Card(
-      isDark: isDark,
+      isDark: widget.isDark,
       padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
       child: Column(
         children: [
-          // 아바타
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-              border: Border.all(color: accent.withValues(alpha: 0.3), width: 2),
-            ),
-            child: Center(
-              child: Text(
-                name.isNotEmpty ? name[0] : '?',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w700,
-                  color: accent,
+          SizedBox(
+            width: 86,
+            height: 82,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                UserAvatar(
+                  name: widget.name,
+                  profileImageUrl: widget.profileImageUrl,
+                  size: 72,
                 ),
-              ),
+                if (_isUploading)
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.38),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.4,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                Positioned(
+                  right: 2,
+                  bottom: 2,
+                  child: Material(
+                    color: accent,
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      onTap: _showImageSourceSheet,
+                      customBorder: const CircleBorder(),
+                      child: const SizedBox(
+                        width: 30,
+                        height: 30,
+                        child: Icon(
+                          Icons.photo_camera_rounded,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 14),
           // 이름
           Text(
-            name,
+            widget.name,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: isDark ? AppColors.textDark : AppColors.textLight,
+              color: widget.isDark ? AppColors.textDark : AppColors.textLight,
             ),
           ),
           const SizedBox(height: 6),
@@ -211,13 +343,16 @@ class _ProfileHero extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
+                ),
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  roleName,
+                  widget.roleName,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -228,15 +363,21 @@ class _ProfileHero extends StatelessWidget {
               const SizedBox(width: 8),
               Row(
                 children: [
-                  Icon(Icons.apartment_rounded,
-                      size: 12,
-                      color: isDark ? AppColors.subtextDark : AppColors.subtextLight),
+                  Icon(
+                    Icons.apartment_rounded,
+                    size: 12,
+                    color: widget.isDark
+                        ? AppColors.subtextDark
+                        : AppColors.subtextLight,
+                  ),
                   const SizedBox(width: 3),
                   Text(
-                    complexName,
+                    widget.complexName,
                     style: TextStyle(
                       fontSize: 12,
-                      color: isDark ? AppColors.subtextDark : AppColors.subtextLight,
+                      color: widget.isDark
+                          ? AppColors.subtextDark
+                          : AppColors.subtextLight,
                     ),
                   ),
                 ],
@@ -245,6 +386,36 @@ class _ProfileHero extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ImageSourceTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isDark;
+  final VoidCallback onTap;
+
+  const _ImageSourceTile({
+    required this.icon,
+    required this.label,
+    required this.isDark,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = isDark ? AppColors.primaryDark : AppColors.primaryLight;
+    return ListTile(
+      leading: Icon(icon, color: accent),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          color: isDark ? AppColors.textDark : AppColors.textLight,
+        ),
+      ),
+      onTap: onTap,
     );
   }
 }
@@ -264,9 +435,19 @@ class _AccountCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SectionLabel(label: '계정 정보', isDark: isDark),
-          _InfoRow(icon: Icons.email_rounded, label: '이메일', value: email, isDark: isDark),
+          _InfoRow(
+            icon: Icons.email_rounded,
+            label: '이메일',
+            value: email,
+            isDark: isDark,
+          ),
           const SizedBox(height: 12),
-          _InfoRow(icon: Icons.calendar_today_rounded, label: '가입일', value: '2024년 3월 15일', isDark: isDark),
+          _InfoRow(
+            icon: Icons.calendar_today_rounded,
+            label: '가입일',
+            value: '2024년 3월 15일',
+            isDark: isDark,
+          ),
         ],
       ),
     );
@@ -346,8 +527,9 @@ class _SettingsCard extends StatelessWidget {
             label: '다크 모드',
             isDark: isDark,
             value: isDark,
-            onChanged: (v) => ref.read(themeModeProvider.notifier).state =
-                v ? ThemeMode.dark : ThemeMode.light,
+            onChanged: (v) => ref.read(themeModeProvider.notifier).state = v
+                ? ThemeMode.dark
+                : ThemeMode.light,
           ),
           _Divider(isDark: isDark),
           _TapRow(
@@ -507,11 +689,13 @@ class _TapRow extends StatelessWidget {
               ),
             ),
             trailing ??
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: isDark ? AppColors.subtextDark : const Color(0xFFC8D6E5),
-              ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: isDark
+                      ? AppColors.subtextDark
+                      : const Color(0xFFC8D6E5),
+                ),
           ],
         ),
       ),
@@ -528,7 +712,8 @@ class _Divider extends StatelessWidget {
     return Divider(
       height: 16,
       thickness: 0.5,
-      color: (isDark ? AppColors.primaryDark : AppColors.primaryLight).withValues(alpha: 0.1),
+      color: (isDark ? AppColors.primaryDark : AppColors.primaryLight)
+          .withValues(alpha: 0.1),
     );
   }
 }
@@ -539,7 +724,11 @@ class _LogoutButton extends StatelessWidget {
   final WidgetRef ref;
   final BuildContext context;
 
-  const _LogoutButton({required this.isDark, required this.ref, required this.context});
+  const _LogoutButton({
+    required this.isDark,
+    required this.ref,
+    required this.context,
+  });
 
   @override
   Widget build(BuildContext _) {
@@ -553,9 +742,13 @@ class _LogoutButton extends StatelessWidget {
         label: const Text('로그아웃'),
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.unregistered,
-          side: BorderSide(color: AppColors.unregistered.withValues(alpha: 0.5)),
+          side: BorderSide(
+            color: AppColors.unregistered.withValues(alpha: 0.5),
+          ),
           padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ),

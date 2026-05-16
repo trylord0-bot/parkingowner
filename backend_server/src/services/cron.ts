@@ -10,7 +10,7 @@ export function startCronJobs(app: FastifyInstance) {
     try {
       await sendDailyReports(app);
     } catch (err) {
-      app.log.error("Daily report cron failed:", err);
+      app.log.error({ err }, "Daily report cron failed");
     }
   });
 
@@ -19,7 +19,7 @@ export function startCronJobs(app: FastifyInstance) {
     try {
       await checkVisitorExpiry(app);
     } catch (err) {
-      app.log.error("Visitor expiry cron failed:", err);
+      app.log.error({ err }, "Visitor expiry cron failed");
     }
   });
 
