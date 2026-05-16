@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -61,6 +62,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      floatingActionButton: kDebugMode
+          ? FloatingActionButton.small(
+              onPressed: () => _showDevPanel(context, isDark),
+              backgroundColor: Colors.red.shade700,
+              tooltip: 'Dev Tools',
+              child: const Icon(Icons.bug_report_rounded, size: 18),
+            )
+          : null,
       body: Container(
         decoration: BoxDecoration(
           gradient: isDark
@@ -111,6 +120,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => _ForgotPasswordSheet(isDark: isDark),
+    );
+  }
+
+  void _showDevPanel(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (_) => _DevPanel(isDark: isDark),
     );
   }
 }
@@ -551,6 +571,192 @@ class _ForgotPasswordSheetState extends ConsumerState<_ForgotPasswordSheet> {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _DevPanel extends ConsumerStatefulWidget {
+  final bool isDark;
+  const _DevPanel({required this.isDark});
+
+  @override
+  ConsumerState<_DevPanel> createState() => _DevPanelState();
+}
+
+class _DevPanelState extends ConsumerState<_DevPanel> {
+  bool _loading = false;
+  Map<String, dynamic>? _result;
+
+  Future<void> _reset() async {
+    setState(() => _loading = true);
+    try {
+      final data = await ref.read(authServiceProvider).devReset();
+      if (mounted) setState(() { _result = data; _loading = false; });
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('오류: $e'),
+            backgroundColor: AppColors.unregistered,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = widget.isDark ? AppColors.textDark : AppColors.textLight;
+    final subColor = widget.isDark ? AppColors.subtextDark : AppColors.subtextLight;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade700,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text('DEBUG',
+                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+              ),
+              const SizedBox(width: 10),
+              Text('개발자 도구',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textColor)),
+              const Spacer(),
+              IconButton(
+                icon: Icon(Icons.close_rounded, color: subColor),
+                onPressed: () => Navigator.pop(context),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          if (_result == null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade700.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.red.shade700.withValues(alpha: 0.25)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 16),
+                      const SizedBox(width: 6),
+                      Text('다음 작업이 실행됩니다',
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.red.shade700)),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ...['모든 사용자, 차량, 입출차 기록 삭제', '모든 단지, 채널, 알림 삭제', '앱 관리자 계정 재생성', '기본 단지 및 주차 구역 재생성']
+                      .map((s) => Padding(
+                            padding: const EdgeInsets.only(top: 4),
+                            child: Row(
+                              children: [
+                                Icon(Icons.remove_rounded, size: 14, color: subColor),
+                                const SizedBox(width: 6),
+                                Text(s, style: TextStyle(fontSize: 12, color: subColor)),
+                              ],
+                            ),
+                          )),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _loading ? null : _reset,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade700,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: _loading
+                    ? const SizedBox(
+                        height: 18, width: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('DB 초기화 + 기본 데이터 세팅',
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+              ),
+            ),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.registered.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.registered.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle_rounded, color: AppColors.registered, size: 18),
+                      const SizedBox(width: 8),
+                      Text('초기화 완료',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textColor)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _ResultRow('이메일', _result!['admin']?['email'] ?? '', subColor, textColor),
+                  const SizedBox(height: 6),
+                  _ResultRow('비밀번호', _result!['admin']?['password'] ?? '', subColor, textColor),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('닫기', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ResultRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color labelColor;
+  final Color valueColor;
+  const _ResultRow(this.label, this.value, this.labelColor, this.valueColor);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 56,
+          child: Text(label, style: TextStyle(fontSize: 12, color: labelColor)),
+        ),
+        Expanded(
+          child: Text(value,
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: valueColor)),
+        ),
+      ],
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../shared/models/app_state.dart';
 
@@ -11,6 +12,9 @@ class AppDrawer extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? AppColors.surfaceDark : Colors.white;
     final headerBg = isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
+    // GoRouter 인스턴스를 미리 캡처한다.
+    // Drawer pop 이후 context가 detach되어도 router는 유효하다.
+    final router = GoRouter.of(context);
 
     return Drawer(
       backgroundColor: bg,
@@ -139,7 +143,7 @@ class AppDrawer extends ConsumerWidget {
                   emoji: '🏢',
                   label: '단지 정보',
                   isDark: isDark,
-                  onTap: () {},
+                  onTap: () => router.push('/complex-info'),
                 ),
                 _DrawerItem(
                   emoji: '📊',
@@ -149,6 +153,12 @@ class AppDrawer extends ConsumerWidget {
                 ),
                 const SizedBox(height: 16),
                 _DrawerSection(label: '앱', isDark: isDark),
+                _DrawerItem(
+                  emoji: '👤',
+                  label: '프로필',
+                  isDark: isDark,
+                  onTap: () => router.push('/profile'),
+                ),
                 _DrawerItem(
                   emoji: '⚙️',
                   label: '설정',
@@ -264,7 +274,9 @@ class _DrawerItem extends StatelessWidget {
       child: InkWell(
         onTap: () {
           Navigator.of(context).pop();
-          onTap();
+          // Drawer pop 애니메이션이 시작된 다음 프레임에 네비게이션한다.
+          // 동기 호출 시 context가 detach된 상태로 push가 실행될 수 있다.
+          WidgetsBinding.instance.addPostFrameCallback((_) => onTap());
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

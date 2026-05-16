@@ -114,6 +114,11 @@ class AuthService {
     _decode(resp);
   }
 
+  Future<Map<String, dynamic>> devReset() async {
+    final resp = await _post('/dev/reset', {});
+    return _decode(resp);
+  }
+
   Future<UserInfo> me(String accessToken) async {
     final resp = await _get('/auth/me', token: accessToken);
     return _parseUserInfo(_decode(resp));

@@ -15,6 +15,7 @@ import parkingZoneRoutes from "./routes/parking-zones.js";
 import channelRoutes from "./routes/channels.js";
 import notificationRoutes from "./routes/notifications.js";
 import ocrRoutes from "./routes/ocr.js";
+import devRoutes from "./routes/dev.js";
 import { config } from "./config/index.js";
 
 export async function buildApp() {
@@ -52,6 +53,10 @@ export async function buildApp() {
   app.register(channelRoutes, { prefix: `${API_PREFIX}/channels` });
   app.register(notificationRoutes, { prefix: `${API_PREFIX}/notifications` });
   app.register(ocrRoutes, { prefix: `${API_PREFIX}/ocr` });
+
+  if (config.NODE_ENV !== "production") {
+    app.register(devRoutes, { prefix: `${API_PREFIX}/dev` });
+  }
 
   // ── Global error handler ─────────────────────────────────────────────────
   app.setErrorHandler((error, _req, reply) => {
