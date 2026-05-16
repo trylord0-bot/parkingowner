@@ -5,6 +5,9 @@
 # AI 프롬프트
 ai/*.md 파일들을 참고하고, backend_server 프로젝트를 참고해서, parking_owner_app 프로젝트에
 
+# Git 프로젝트의 파일tree구조 파일 저장
+git ls-files > tree.txt
+
 # 테스트 계정
 admin@parkingowner.com
 Admin1234!
