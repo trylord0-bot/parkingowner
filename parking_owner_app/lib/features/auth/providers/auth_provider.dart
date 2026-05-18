@@ -82,6 +82,30 @@ class AuthNotifier extends AsyncNotifier<UserInfo?> {
     );
     state = AsyncData(currentUser.copyWith(profileImageUrl: profileImageUrl));
   }
+
+  Future<void> reloadCurrentUser() async {
+    final storage = ref.read(storageServiceProvider);
+    final tokens = await storage.loadTokens();
+    var accessToken = tokens.accessToken;
+    if (accessToken == null) {
+      state = const AsyncData(null);
+      return;
+    }
+
+    final service = ref.read(authServiceProvider);
+    if (tokens.refreshToken != null) {
+      try {
+        final refreshed = await service.refresh(tokens.refreshToken!);
+        await storage.saveTokens(
+          access: refreshed.accessToken,
+          refresh: refreshed.refreshToken,
+        );
+        accessToken = refreshed.accessToken;
+      } catch (_) {}
+    }
+
+    state = AsyncData(await service.me(accessToken!));
+  }
 }
 
 final authNotifierProvider = AsyncNotifierProvider<AuthNotifier, UserInfo?>(

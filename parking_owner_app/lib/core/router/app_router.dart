@@ -6,22 +6,25 @@ import '../../features/auth/providers/auth_provider.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/signup_screen.dart';
 import '../../features/complex_info/screens/complex_info_screen.dart';
+import '../../features/complex_onboarding/screens/complex_onboarding_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../shared/widgets/main_scaffold.dart';
 
-CustomTransitionPage<void> _slidePage(GoRouterState state, Widget child) =>
-    CustomTransitionPage<void>(
-      key: state.pageKey,
-      child: child,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-          SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(1.0, 0.0),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut)),
-            child: child,
-          ),
-    );
+CustomTransitionPage<void> _slidePage(
+  GoRouterState state,
+  Widget child,
+) => CustomTransitionPage<void>(
+  key: state.pageKey,
+  child: child,
+  transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+      SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(1.0, 0.0),
+          end: Offset.zero,
+        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut)),
+        child: child,
+      ),
+);
 
 // GoRouter는 한 번만 생성하고, auth 상태 변경은 refreshListenable로 전달한다.
 // Provider가 rebuild될 때마다 GoRouter를 재생성하면 redirect 클로저가
@@ -44,23 +47,48 @@ final routerProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authNotifierProvider);
       if (authState.isLoading) return null;
       final loggedIn = authState.valueOrNull != null;
+      final user = authState.valueOrNull;
       final path = state.uri.path;
       final onAuthRoute = path == '/login' || path == '/signup';
+      final onOnboardingRoute = path == '/onboarding';
+      final needsComplex = loggedIn && user?.currentComplexId == null;
       if (!loggedIn && !onAuthRoute) return '/login';
-      if (loggedIn && onAuthRoute) return '/home';
+      if (loggedIn && onAuthRoute) {
+        return needsComplex ? '/onboarding?required=1' : '/home';
+      }
+      if (needsComplex && !onOnboardingRoute) return '/onboarding?required=1';
+      if (!needsComplex &&
+          onOnboardingRoute &&
+          state.uri.queryParameters['required'] == '1') {
+        return '/home';
+      }
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
-      GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
+      GoRoute(
+        path: '/signup',
+        builder: (context, state) => const SignupScreen(),
+      ),
       GoRoute(path: '/home', builder: (context, state) => const MainScaffold()),
       GoRoute(
+        path: '/onboarding',
+        pageBuilder: (context, state) => _slidePage(
+          state,
+          ComplexOnboardingScreen(
+            isRequired: state.uri.queryParameters['required'] == '1',
+          ),
+        ),
+      ),
+      GoRoute(
         path: '/complex-info',
-        pageBuilder: (context, state) => _slidePage(state, const ComplexInfoScreen()),
+        pageBuilder: (context, state) =>
+            _slidePage(state, const ComplexInfoScreen()),
       ),
       GoRoute(
         path: '/profile',
-        pageBuilder: (context, state) => _slidePage(state, const ProfileScreen()),
+        pageBuilder: (context, state) =>
+            _slidePage(state, const ProfileScreen()),
       ),
     ],
   );

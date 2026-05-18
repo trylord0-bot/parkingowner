@@ -130,7 +130,10 @@ const authRoutes: FastifyPluginAsync = async (app) => {
 
     const user = await app.prisma.user.findUnique({
       where: { email: body.email },
-      include: { complexMembers: { where: { isActive: true }, take: 1 } },
+      include: {
+        currentComplex: true,
+        complexMembers: { where: { isActive: true } },
+      },
     });
 
     if (!user || !user.password) {
@@ -146,13 +149,15 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       return reply.code(403).send({ error: "비활성화된 계정입니다." });
     }
 
-    const primaryMember = user.complexMembers[0];
+    const primaryMember =
+      user.complexMembers.find((m) => m.complexId === user.currentComplexId) ??
+      user.complexMembers[0];
 
     const payload = {
       sub: user.id,
       email: user.email,
       role: primaryMember?.role ?? "RESIDENT",
-      complexId: primaryMember?.complexId,
+      complexId: user.currentComplexId ?? primaryMember?.complexId,
     };
 
     const accessToken = app.jwt.sign(payload);
@@ -172,7 +177,9 @@ const authRoutes: FastifyPluginAsync = async (app) => {
         email: user.email,
         profileImageUrl: user.profileImageUrl,
         role: primaryMember?.role ?? "RESIDENT",
-        complexId: primaryMember?.complexId ?? null,
+        currentComplexId: user.currentComplexId ?? primaryMember?.complexId ?? null,
+        complexId: user.currentComplexId ?? primaryMember?.complexId ?? null,
+        complexName: user.currentComplex?.alias ?? user.currentComplex?.name ?? null,
       },
     };
   });
@@ -185,7 +192,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       where: { token: refreshToken },
       include: {
         user: {
-          include: { complexMembers: { where: { isActive: true }, take: 1 } },
+          include: { complexMembers: { where: { isActive: true } } },
         },
       },
     });
@@ -196,13 +203,15 @@ const authRoutes: FastifyPluginAsync = async (app) => {
     }
 
     const user = stored.user;
-    const primaryMember = user.complexMembers[0];
+    const primaryMember =
+      user.complexMembers.find((m) => m.complexId === user.currentComplexId) ??
+      user.complexMembers[0];
 
     const accessToken = app.jwt.sign({
       sub: user.id,
       email: user.email,
       role: primaryMember?.role ?? "RESIDENT",
-      complexId: primaryMember?.complexId,
+      complexId: user.currentComplexId ?? primaryMember?.complexId,
     });
 
     // Rotate refresh token
@@ -275,6 +284,7 @@ const authRoutes: FastifyPluginAsync = async (app) => {
     const user = await app.prisma.user.findUnique({
       where: { id: req.user.sub },
       include: {
+        currentComplex: true,
         complexMembers: {
           where: { isActive: true },
           include: { complex: true },
@@ -291,9 +301,11 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       phone: user.phone,
       profileImageUrl: user.profileImageUrl,
       emailVerified: user.emailVerified,
+      currentComplexId: user.currentComplexId,
+      currentComplexName: user.currentComplex?.alias ?? user.currentComplex?.name ?? null,
       complexMembers: user.complexMembers.map((m) => ({
         complexId: m.complexId,
-        complexName: m.complex.name,
+        complexName: m.complex.alias || m.complex.name,
         role: m.role,
       })),
     };

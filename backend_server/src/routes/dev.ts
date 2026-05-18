@@ -45,6 +45,10 @@ const devRoutes: FastifyPluginAsync = async (app) => {
       data: {
         name: "행복마을아파트",
         address: "서울특별시 강남구 역삼동 123",
+        roadAddress: "서울 강남구 테헤란로 123",
+        jibunAddress: "서울특별시 강남구 역삼동 123",
+        zipCode: "06132",
+        alias: "행복마을아파트",
         latitude: 37.5012,
         longitude: 127.0396,
         totalSlots: 200,
@@ -53,6 +57,11 @@ const devRoutes: FastifyPluginAsync = async (app) => {
 
     await app.prisma.complexMember.create({
       data: { userId: admin.id, complexId: complex.id, role: "APP_ADMIN" },
+    });
+
+    await app.prisma.user.update({
+      where: { id: admin.id },
+      data: { currentComplexId: complex.id },
     });
 
     await app.prisma.parkingZone.createMany({

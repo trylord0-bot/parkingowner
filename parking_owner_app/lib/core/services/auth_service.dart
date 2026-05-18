@@ -105,7 +105,10 @@ class AuthService {
         name: userData['name'] as String,
         email: userData['email'] as String,
         role: _parseRole(userData['role'] as String? ?? 'RESIDENT'),
-        complexName: '',
+        currentComplexId:
+            userData['currentComplexId'] as String? ??
+            userData['complexId'] as String?,
+        complexName: userData['complexName'] as String? ?? '',
         profileImageUrl: _normalizeNullableAssetUrl(
           userData['profileImageUrl'] as String?,
         ),
@@ -204,6 +207,7 @@ class AuthService {
         name: '',
         email: '',
         role: UserRole.resident,
+        currentComplexId: null,
         complexName: '',
       ),
     );
@@ -261,13 +265,20 @@ class AuthService {
   UserInfo _parseUserInfo(Map<String, dynamic> data) {
     final members =
         (data['complexMembers'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-    final primary = members.isNotEmpty ? members.first : null;
+    final currentComplexId = data['currentComplexId'] as String?;
+    final primary =
+        members.where((m) => m['complexId'] == currentComplexId).firstOrNull ??
+        (members.isNotEmpty ? members.first : null);
     return UserInfo(
       id: data['id'] as String,
       name: data['name'] as String,
       email: data['email'] as String,
       role: _parseRole(primary?['role'] as String? ?? 'RESIDENT'),
-      complexName: primary?['complexName'] as String? ?? '',
+      currentComplexId: currentComplexId ?? (primary?['complexId'] as String?),
+      complexName:
+          data['currentComplexName'] as String? ??
+          primary?['complexName'] as String? ??
+          '',
       profileImageUrl: _normalizeNullableAssetUrl(
         data['profileImageUrl'] as String?,
       ),

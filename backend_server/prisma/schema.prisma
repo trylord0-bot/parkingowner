@@ -79,6 +79,7 @@ model User {
   emailVerifyExpiresAt  DateTime?
   passwordResetToken String?
   passwordResetAt    DateTime?
+  currentComplexId   String?
   isActive           Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -90,6 +91,7 @@ model User {
 
   refreshTokens  RefreshToken[]
   complexMembers ComplexMember[]
+  currentComplex Complex?        @relation("CurrentComplex", fields: [currentComplexId], references: [id], onDelete: SetNull)
   sentMessages   Message[]        @relation("SentMessages")
   notifications  Notification[]
   requests       Request[]        @relation("RequesterRequests")
@@ -119,6 +121,10 @@ model Complex {
   id          String   @id @default(cuid())
   name        String
   address     String
+  roadAddress String   @unique
+  jibunAddress String?
+  zipCode     String?
+  alias       String
   latitude    Float?
   longitude   Float?
   totalSlots  Int      @default(0)
@@ -127,6 +133,7 @@ model Complex {
   updatedAt   DateTime @updatedAt
 
   members       ComplexMember[]
+  currentUsers  User[]          @relation("CurrentComplex")
   households    Household[]
   vehicles      Vehicle[]
   entryLogs     EntryLog[]

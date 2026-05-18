@@ -189,6 +189,12 @@ class AppDrawer extends ConsumerWidget {
                   onTap: () => router.push('/complex-info'),
                 ),
                 _DrawerItem(
+                  emoji: '➕',
+                  label: '단지 변경 / 추가',
+                  isDark: isDark,
+                  onTap: () => router.push('/onboarding'),
+                ),
+                _DrawerItem(
                   emoji: '📊',
                   label: '리포트 (통계)',
                   isDark: isDark,

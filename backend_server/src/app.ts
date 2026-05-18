@@ -20,6 +20,7 @@ import channelRoutes from "./routes/channels.js";
 import notificationRoutes from "./routes/notifications.js";
 import ocrRoutes from "./routes/ocr.js";
 import userRoutes from "./routes/users.js";
+import complexRoutes from "./routes/complexes.js";
 import devRoutes from "./routes/dev.js";
 import { config } from "./config/index.js";
 
@@ -65,6 +66,7 @@ export async function buildApp() {
   app.register(notificationRoutes, { prefix: `${API_PREFIX}/notifications` });
   app.register(ocrRoutes, { prefix: `${API_PREFIX}/ocr` });
   app.register(userRoutes, { prefix: `${API_PREFIX}/users` });
+  app.register(complexRoutes, { prefix: `${API_PREFIX}/complexes` });
 
   if (config.NODE_ENV !== "production") {
     app.register(devRoutes, { prefix: `${API_PREFIX}/dev` });

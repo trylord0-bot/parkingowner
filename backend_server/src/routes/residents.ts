@@ -156,6 +156,10 @@ const residentRoutes: FastifyPluginAsync = async (app) => {
         },
         update: { isActive: true },
       }),
+      app.prisma.user.update({
+        where: { id: request.requesterId },
+        data: { currentComplexId: request.complexId },
+      }),
     ]);
 
     await sendNotificationToUser(app.prisma, request.requesterId, {
@@ -256,6 +260,10 @@ const residentRoutes: FastifyPluginAsync = async (app) => {
         where: { userId_complexId: { userId: req.user.sub, complexId: invite.complexId } },
         create: { userId: req.user.sub, complexId: invite.complexId, role: "RESIDENT" },
         update: { isActive: true },
+      }),
+      app.prisma.user.update({
+        where: { id: req.user.sub },
+        data: { currentComplexId: invite.complexId },
       }),
     ]);
 

@@ -12,6 +12,7 @@ class UserInfo {
   final String name;
   final String email;
   final UserRole role;
+  final String? currentComplexId;
   final String complexName;
   final String? profileImageUrl;
 
@@ -20,6 +21,7 @@ class UserInfo {
     required this.name,
     required this.email,
     required this.role,
+    this.currentComplexId,
     required this.complexName,
     this.profileImageUrl,
   });
@@ -29,6 +31,7 @@ class UserInfo {
     String? name,
     String? email,
     UserRole? role,
+    String? currentComplexId,
     String? complexName,
     String? profileImageUrl,
   }) {
@@ -37,6 +40,7 @@ class UserInfo {
       name: name ?? this.name,
       email: email ?? this.email,
       role: role ?? this.role,
+      currentComplexId: currentComplexId ?? this.currentComplexId,
       complexName: complexName ?? this.complexName,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
     );
