@@ -1,0 +1,2 @@
+ALTER TABLE `complexes`
+  ADD COLUMN IF NOT EXISTS `buildingName` VARCHAR(191) NULL;

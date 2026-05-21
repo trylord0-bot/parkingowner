@@ -18,7 +18,7 @@ class ProfileScreen extends ConsumerWidget {
     final name = user?.name ?? '최현우';
     final email = user?.email ?? 'choi@happy-apt.com';
     final roleName = _roleName(user?.role);
-    final complexName = user?.complexName ?? '행복마을아파트';
+    final complexName = user?.displayComplexName ?? '단지 미설정';
 
     return Scaffold(
       backgroundColor: isDark

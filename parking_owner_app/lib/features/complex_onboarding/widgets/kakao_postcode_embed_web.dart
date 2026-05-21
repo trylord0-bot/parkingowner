@@ -64,7 +64,7 @@ class _KakaoPostcodeEmbedState extends State<KakaoPostcodeEmbed> {
       Object? params,
     }) {
       final iframe = web.HTMLIFrameElement()
-        ..srcdoc = _webPostcodeHtml.toJS
+        ..src = 'kakao_postcode.html'
         ..style.width = '100%'
         ..style.height = '100%'
         ..style.border = '0'
@@ -82,54 +82,3 @@ class _KakaoPostcodeEmbedState extends State<KakaoPostcodeEmbed> {
     );
   }
 }
-
-const _webPostcodeHtml = '''
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<style>
-html,body,#wrap{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#fff;}
-body{font-family:-apple-system,BlinkMacSystemFont,'Noto Sans KR',sans-serif;}
-#loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#666;font-size:14px;}
-</style>
-</head>
-<body>
-<div id="loading">카카오 주소검색을 불러오는 중입니다.</div>
-<div id="wrap"></div>
-<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script>
-function sendAddress(data) {
-  parent.postMessage(JSON.stringify({
-    source: 'parking-owner-kakao-postcode',
-    payload: {
-      roadAddress: data.roadAddress || data.address || '',
-      jibunAddress: data.jibunAddress || '',
-      zipCode: data.zonecode || ''
-    }
-  }), '*');
-}
-
-function boot() {
-  if (!window.daum || !window.daum.Postcode) {
-    document.getElementById('loading').textContent = '카카오 주소검색을 불러오지 못했습니다. 네트워크를 확인해주세요.';
-    return;
-  }
-  document.getElementById('loading').style.display = 'none';
-  new daum.Postcode({
-    oncomplete: sendAddress,
-    width: '100%',
-    height: '100%'
-  }).embed(document.getElementById('wrap'));
-}
-
-if (document.readyState === 'complete') {
-  boot();
-} else {
-  window.addEventListener('load', boot);
-}
-</script>
-</body>
-</html>
-''';

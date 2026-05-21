@@ -10,6 +10,7 @@ const createComplexSchema = z.object({
   roadAddress: z.string().min(1).max(255),
   jibunAddress: z.string().max(255).optional().nullable(),
   zipCode: z.string().max(20).optional().nullable(),
+  buildingName: z.string().max(100).optional().nullable(),
   alias: z.string().min(1).max(100),
 });
 
@@ -18,6 +19,27 @@ const inviteCodeSchema = z.object({
 });
 
 const normalizeAddress = (value: string) => value.trim().replace(/\s+/g, " ");
+const normalizeOptional = (value?: string | null) => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+};
+
+const splitRoadAddress = (value: string) => {
+  const normalized = normalizeAddress(value);
+  const match = normalized.match(/^(.*)\(([^()]*)\)\s*$/);
+  if (!match) return { roadAddress: normalized, buildingName: null };
+
+  const roadAddress = normalizeAddress(match[1]);
+  const parenthetical = match[2]?.trim();
+  const buildingName = parenthetical
+    ?.split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .at(-1) ?? null;
+
+  if (!roadAddress || !buildingName) return { roadAddress: normalized, buildingName: null };
+  return { roadAddress, buildingName };
+};
 
 const complexRoutes: FastifyPluginAsync = async (app) => {
   app.addHook("preHandler", authenticate);
@@ -25,7 +47,8 @@ const complexRoutes: FastifyPluginAsync = async (app) => {
   // GET /complexes/check?roadAddress=...
   app.get("/check", async (req) => {
     const query = checkQuerySchema.parse(req.query);
-    const roadAddress = normalizeAddress(query.roadAddress);
+    const parsedAddress = splitRoadAddress(query.roadAddress);
+    const roadAddress = parsedAddress.roadAddress;
 
     const complex = await app.prisma.complex.findUnique({
       where: { roadAddress },
@@ -34,6 +57,7 @@ const complexRoutes: FastifyPluginAsync = async (app) => {
         roadAddress: true,
         jibunAddress: true,
         zipCode: true,
+        buildingName: true,
         alias: true,
         name: true,
       },
@@ -50,6 +74,7 @@ const complexRoutes: FastifyPluginAsync = async (app) => {
         roadAddress: complex.roadAddress,
         jibunAddress: complex.jibunAddress,
         zipCode: complex.zipCode,
+        buildingName: complex.buildingName,
         alias: complex.alias || complex.name,
       },
     };
@@ -58,7 +83,9 @@ const complexRoutes: FastifyPluginAsync = async (app) => {
   // POST /complexes
   app.post("/", async (req, reply) => {
     const body = createComplexSchema.parse(req.body);
-    const roadAddress = normalizeAddress(body.roadAddress);
+    const parsedAddress = splitRoadAddress(body.roadAddress);
+    const roadAddress = parsedAddress.roadAddress;
+    const buildingName = normalizeOptional(body.buildingName) ?? parsedAddress.buildingName;
     const alias = body.alias.trim();
 
     const existing = await app.prisma.complex.findUnique({
@@ -74,8 +101,9 @@ const complexRoutes: FastifyPluginAsync = async (app) => {
           name: alias,
           address: roadAddress,
           roadAddress,
-          jibunAddress: body.jibunAddress?.trim() || null,
-          zipCode: body.zipCode?.trim() || null,
+          jibunAddress: normalizeOptional(body.jibunAddress),
+          zipCode: normalizeOptional(body.zipCode),
+          buildingName,
           alias,
           totalSlots: 0,
         },
@@ -103,6 +131,7 @@ const complexRoutes: FastifyPluginAsync = async (app) => {
         roadAddress: complex.roadAddress,
         jibunAddress: complex.jibunAddress,
         zipCode: complex.zipCode,
+        buildingName: complex.buildingName,
         alias: complex.alias,
       },
     });
@@ -157,6 +186,7 @@ const complexRoutes: FastifyPluginAsync = async (app) => {
         id: complex.id,
         alias: complex.alias,
         roadAddress: complex.roadAddress,
+        buildingName: complex.buildingName,
       },
     });
   });
@@ -195,6 +225,7 @@ const complexRoutes: FastifyPluginAsync = async (app) => {
         id: invite.complex.id,
         alias: invite.complex.alias,
         roadAddress: invite.complex.roadAddress,
+        buildingName: invite.complex.buildingName,
       },
     };
   });

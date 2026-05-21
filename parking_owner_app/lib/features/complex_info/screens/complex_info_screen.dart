@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../auth/providers/auth_provider.dart';
 
 class ComplexInfoScreen extends ConsumerWidget {
   const ComplexInfoScreen({super.key});
@@ -10,9 +11,15 @@ class ComplexInfoScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final user = ref.watch(authNotifierProvider).valueOrNull;
+    final complexName = user?.displayComplexName ?? '단지 미설정';
+    final roadAddress = user?.complexRoadAddress?.trim();
+    final buildingName = user?.complexBuildingName?.trim();
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor: isDark
+          ? AppColors.backgroundDark
+          : AppColors.backgroundLight,
       body: Column(
         children: [
           _Header(isDark: isDark),
@@ -20,7 +27,16 @@ class ComplexInfoScreen extends ConsumerWidget {
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _HeroCard(isDark: isDark),
+                _HeroCard(
+                  isDark: isDark,
+                  complexName: complexName,
+                  roadAddress: roadAddress?.isNotEmpty == true
+                      ? roadAddress!
+                      : '주소 정보 없음',
+                  buildingName: buildingName?.isNotEmpty == true
+                      ? buildingName
+                      : null,
+                ),
                 const SizedBox(height: 12),
                 _StatsRow(isDark: isDark),
                 const SizedBox(height: 12),
@@ -47,23 +63,40 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: isDark ? AppColors.surfaceDark : AppColors.primaryLight,
-      padding: EdgeInsets.fromLTRB(4, MediaQuery.of(context).padding.top + 4, 8, 14),
+      padding: EdgeInsets.fromLTRB(
+        4,
+        MediaQuery.of(context).padding.top + 4,
+        8,
+        14,
+      ),
       child: Row(
         children: [
           IconButton(
             onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Colors.white),
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              size: 18,
+              color: Colors.white,
+            ),
             padding: EdgeInsets.zero,
           ),
           const Expanded(
             child: Text(
               '단지 정보',
-              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           IconButton(
             onPressed: () {},
-            icon: Icon(Icons.edit_outlined, size: 19, color: Colors.white.withValues(alpha: 0.7)),
+            icon: Icon(
+              Icons.edit_outlined,
+              size: 19,
+              color: Colors.white.withValues(alpha: 0.7),
+            ),
             padding: EdgeInsets.zero,
           ),
           const SizedBox(width: 8),
@@ -95,7 +128,7 @@ class _Card extends StatelessWidget {
                   color: AppColors.primaryLight.withValues(alpha: 0.07),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
-                )
+                ),
               ],
       ),
       child: child,
@@ -128,7 +161,16 @@ class _SectionLabel extends StatelessWidget {
 // ── 단지 기본 정보 ─────────────────────────────────────────────────────────────
 class _HeroCard extends StatelessWidget {
   final bool isDark;
-  const _HeroCard({required this.isDark});
+  final String complexName;
+  final String roadAddress;
+  final String? buildingName;
+
+  const _HeroCard({
+    required this.isDark,
+    required this.complexName,
+    required this.roadAddress,
+    this.buildingName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -156,16 +198,21 @@ class _HeroCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(
-                      '행복마을아파트',
+                      complexName,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: isDark ? AppColors.textDark : AppColors.textLight,
+                        color: isDark
+                            ? AppColors.textDark
+                            : AppColors.textLight,
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: accent.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
@@ -183,24 +230,64 @@ class _HeroCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.location_on_rounded, size: 12, color: isDark ? AppColors.subtextDark : AppColors.subtextLight),
+                    Icon(
+                      Icons.location_on_rounded,
+                      size: 12,
+                      color: isDark
+                          ? AppColors.subtextDark
+                          : AppColors.subtextLight,
+                    ),
                     const SizedBox(width: 3),
-                    Text(
-                      '서울특별시 강남구 테헤란로 123',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? AppColors.subtextDark : AppColors.subtextLight,
+                    Expanded(
+                      child: Text(
+                        roadAddress,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark
+                              ? AppColors.subtextDark
+                              : AppColors.subtextLight,
+                        ),
                       ),
                     ),
                   ],
                 ),
+                if (buildingName != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.business_rounded,
+                        size: 12,
+                        color: isDark
+                            ? AppColors.subtextDark
+                            : AppColors.subtextLight,
+                      ),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          buildingName!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.primaryDark
+                                : AppColors.primaryLight,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: 4),
                 Text(
                   '준공 2015년 · 총 240세대',
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? AppColors.subtextDark : AppColors.subtextLight,
+                    color: isDark
+                        ? AppColors.subtextDark
+                        : AppColors.subtextLight,
                   ),
                 ),
               ],
@@ -229,9 +316,19 @@ class _StatsRow extends StatelessWidget {
           _Vdivider(isDark: isDark),
           _StatItem(value: '200', label: '주차면수', isDark: isDark),
           _Vdivider(isDark: isDark),
-          _StatItem(value: '187', label: '등록차량', isDark: isDark, color: AppColors.accent),
+          _StatItem(
+            value: '187',
+            label: '등록차량',
+            isDark: isDark,
+            color: AppColors.accent,
+          ),
           _Vdivider(isDark: isDark),
-          _StatItem(value: '142', label: '현재 입차', isDark: isDark, color: AppColors.registered),
+          _StatItem(
+            value: '142',
+            label: '현재 입차',
+            isDark: isDark,
+            color: AppColors.registered,
+          ),
         ],
       ),
     );
@@ -244,7 +341,12 @@ class _StatItem extends StatelessWidget {
   final bool isDark;
   final Color? color;
 
-  const _StatItem({required this.value, required this.label, required this.isDark, this.color});
+  const _StatItem({
+    required this.value,
+    required this.label,
+    required this.isDark,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -280,7 +382,8 @@ class _Vdivider extends StatelessWidget {
     return Container(
       height: 32,
       width: 1,
-      color: (isDark ? AppColors.primaryDark : AppColors.primaryLight).withValues(alpha: 0.12),
+      color: (isDark ? AppColors.primaryDark : AppColors.primaryLight)
+          .withValues(alpha: 0.12),
     );
   }
 }
@@ -368,7 +471,9 @@ class _InfoRow extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 10,
-                  color: isDark ? AppColors.subtextDark : AppColors.subtextLight,
+                  color: isDark
+                      ? AppColors.subtextDark
+                      : AppColors.subtextLight,
                 ),
               ),
               Text(
@@ -448,7 +553,10 @@ class _InviteCodeCard extends StatelessWidget {
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 7,
+                    ),
                     decoration: BoxDecoration(
                       color: accent,
                       borderRadius: BorderRadius.circular(9),
@@ -504,7 +612,13 @@ class _ZonesCard extends StatelessWidget {
             final isLast = e.key == _zones.length - 1;
             return Padding(
               padding: EdgeInsets.only(bottom: isLast ? 0 : 14),
-              child: _ZoneRow(name: z.$1, total: z.$2, used: z.$3, color: z.$4, isDark: isDark),
+              child: _ZoneRow(
+                name: z.$1,
+                total: z.$2,
+                used: z.$3,
+                color: z.$4,
+                isDark: isDark,
+              ),
             );
           }),
         ],
@@ -540,7 +654,10 @@ class _ZoneRow extends StatelessWidget {
             Container(
               width: 4,
               height: 16,
-              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(

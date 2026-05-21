@@ -14,6 +14,8 @@ class UserInfo {
   final UserRole role;
   final String? currentComplexId;
   final String complexName;
+  final String? complexBuildingName;
+  final String? complexRoadAddress;
   final String? profileImageUrl;
 
   const UserInfo({
@@ -23,8 +25,17 @@ class UserInfo {
     required this.role,
     this.currentComplexId,
     required this.complexName,
+    this.complexBuildingName,
+    this.complexRoadAddress,
     this.profileImageUrl,
   });
+
+  String get displayComplexName {
+    if (complexName.trim().isNotEmpty) return complexName.trim();
+    final buildingName = complexBuildingName?.trim();
+    if (buildingName?.isNotEmpty == true) return buildingName!;
+    return '단지 미설정';
+  }
 
   UserInfo copyWith({
     String? id,
@@ -33,6 +44,8 @@ class UserInfo {
     UserRole? role,
     String? currentComplexId,
     String? complexName,
+    String? complexBuildingName,
+    String? complexRoadAddress,
     String? profileImageUrl,
   }) {
     return UserInfo(
@@ -42,6 +55,8 @@ class UserInfo {
       role: role ?? this.role,
       currentComplexId: currentComplexId ?? this.currentComplexId,
       complexName: complexName ?? this.complexName,
+      complexBuildingName: complexBuildingName ?? this.complexBuildingName,
+      complexRoadAddress: complexRoadAddress ?? this.complexRoadAddress,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
     );
   }

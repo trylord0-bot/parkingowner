@@ -228,6 +228,16 @@ class _ComplexResultSheetState extends ConsumerState<_ComplexResultSheet> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    final suggestedAlias = widget.address.buildingName?.trim();
+    if (widget.checkResult.exists == false &&
+        suggestedAlias?.isNotEmpty == true) {
+      _aliasController.text = suggestedAlias!;
+    }
+  }
+
+  @override
   void dispose() {
     _aliasController.dispose();
     _inviteCodeController.dispose();
@@ -371,6 +381,8 @@ class _ComplexResultSheetState extends ConsumerState<_ComplexResultSheet> {
                     ? AppColors.registered
                     : const Color(0xFF9CA3AF),
                 roadAddress: widget.address.roadAddress,
+                buildingName:
+                    complex?.buildingName ?? widget.address.buildingName,
                 alias: complex?.alias,
               ),
               const SizedBox(height: 16),
@@ -399,12 +411,14 @@ class _AddressBox extends StatelessWidget {
   final String badge;
   final Color badgeColor;
   final String roadAddress;
+  final String? buildingName;
   final String? alias;
 
   const _AddressBox({
     required this.badge,
     required this.badgeColor,
     required this.roadAddress,
+    this.buildingName,
     this.alias,
   });
 
@@ -437,6 +451,25 @@ class _AddressBox extends StatelessWidget {
               fontWeight: FontWeight.w800,
             ),
           ),
+          if (buildingName?.isNotEmpty == true) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const _StatusBadge(label: '건물명', color: AppColors.accent),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    buildingName!,
+                    style: const TextStyle(
+                      color: AppColors.accent,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (alias?.isNotEmpty == true) ...[
             const SizedBox(height: 8),
             Row(

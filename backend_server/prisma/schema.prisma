@@ -124,6 +124,7 @@ model Complex {
   roadAddress String   @unique
   jibunAddress String?
   zipCode     String?
+  buildingName String?
   alias       String
   latitude    Float?
   longitude   Float?

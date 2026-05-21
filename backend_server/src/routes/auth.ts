@@ -180,6 +180,8 @@ const authRoutes: FastifyPluginAsync = async (app) => {
         currentComplexId: user.currentComplexId ?? primaryMember?.complexId ?? null,
         complexId: user.currentComplexId ?? primaryMember?.complexId ?? null,
         complexName: user.currentComplex?.alias ?? user.currentComplex?.name ?? null,
+        complexBuildingName: user.currentComplex?.buildingName ?? null,
+        complexRoadAddress: user.currentComplex?.roadAddress ?? user.currentComplex?.address ?? null,
       },
     };
   });
@@ -303,9 +305,13 @@ const authRoutes: FastifyPluginAsync = async (app) => {
       emailVerified: user.emailVerified,
       currentComplexId: user.currentComplexId,
       currentComplexName: user.currentComplex?.alias ?? user.currentComplex?.name ?? null,
+      currentComplexBuildingName: user.currentComplex?.buildingName ?? null,
+      currentComplexRoadAddress: user.currentComplex?.roadAddress ?? user.currentComplex?.address ?? null,
       complexMembers: user.complexMembers.map((m) => ({
         complexId: m.complexId,
         complexName: m.complex.alias || m.complex.name,
+        complexBuildingName: m.complex.buildingName,
+        complexRoadAddress: m.complex.roadAddress || m.complex.address,
         role: m.role,
       })),
     };

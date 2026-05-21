@@ -109,6 +109,8 @@ class AuthService {
             userData['currentComplexId'] as String? ??
             userData['complexId'] as String?,
         complexName: userData['complexName'] as String? ?? '',
+        complexBuildingName: userData['complexBuildingName'] as String?,
+        complexRoadAddress: userData['complexRoadAddress'] as String?,
         profileImageUrl: _normalizeNullableAssetUrl(
           userData['profileImageUrl'] as String?,
         ),
@@ -209,6 +211,8 @@ class AuthService {
         role: UserRole.resident,
         currentComplexId: null,
         complexName: '',
+        complexBuildingName: null,
+        complexRoadAddress: null,
       ),
     );
   }
@@ -279,6 +283,12 @@ class AuthService {
           data['currentComplexName'] as String? ??
           primary?['complexName'] as String? ??
           '',
+      complexBuildingName:
+          data['currentComplexBuildingName'] as String? ??
+          primary?['complexBuildingName'] as String?,
+      complexRoadAddress:
+          data['currentComplexRoadAddress'] as String? ??
+          primary?['complexRoadAddress'] as String?,
       profileImageUrl: _normalizeNullableAssetUrl(
         data['profileImageUrl'] as String?,
       ),

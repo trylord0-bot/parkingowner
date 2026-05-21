@@ -18,9 +18,7 @@ class AppDrawer extends ConsumerWidget {
         : AppColors.backgroundLight;
     final user = ref.watch(authNotifierProvider).valueOrNull;
     final name = user?.name ?? '최현우';
-    final complexName = user?.complexName.isNotEmpty == true
-        ? user!.complexName
-        : '행복마을아파트';
+    final complexName = user?.displayComplexName ?? '단지 미설정';
     final roleName = _roleName(user?.role);
     // GoRouter 인스턴스를 미리 캡처한다.
     // Drawer pop 이후 context가 detach되어도 router는 유효하다.

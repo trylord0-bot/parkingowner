@@ -128,7 +128,8 @@ new daum.Postcode({
     KakaoPostcode.postMessage(JSON.stringify({
       roadAddress: data.roadAddress || data.address,
       jibunAddress: data.jibunAddress || '',
-      zipCode: data.zonecode || ''
+      zipCode: data.zonecode || '',
+      buildingName: data.buildingName || ''
     }));
   },
   width: '100%',
